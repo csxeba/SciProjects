@@ -16,8 +16,8 @@ try:
 except ImportError:
     raise ImportError("NumPy is not available, please install it!")
 
-from src.ga import Population
-from src.util import log
+from bz.src.ga import Population
+from bz.src.util import log
 
 
 class Param:
