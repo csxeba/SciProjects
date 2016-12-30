@@ -1,12 +1,11 @@
+from csxdata import CData
 from csxdata.utilities.highlevel import plot, transform
-
-from project_grapes.misc import pull_data
 
 
 FEATURE = "évjárat"
 TRANSFORM = "lda"
 
-X, Y = pull_data(feature=FEATURE)
+X, Y = CData
 
 
 def plot_raw():

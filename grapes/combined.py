@@ -1,9 +1,9 @@
 from csxdata import CData
-from csxnet.ann import Autoencoder, Network
-from csxnet.brainforge.layers import DenseLayer, HighwayLayer
+from csxnet.ann import Network
+from csxnet.brainforge.layers import DenseLayer
 
-from project_grapes.misc import pull_data
-from project_grapes.classical import full_run
+from SciProjects.grapes.misc import pull_data
+from SciProjects.grapes.classical import full_run
 
 grapes = pull_data(frame=True, feature="borrégió")
 grapes.transformation = "std"
@@ -15,7 +15,7 @@ def autoencoder():
     ae.add(DenseLayer(30, activation="tanh"))
     ae.add(DenseLayer(30, activation="tanh"))
     ae.add(DenseLayer(60, activation="tanh"))
-    ae.add(DenseLayer(grapes.neurons_required[0]))
+    ae.add(DenseLayer(grapes.neurons_required[0], activation="linear"))
     ae.finalize(cost="mse", optimizer="adam")
     ae.describe(1)
 

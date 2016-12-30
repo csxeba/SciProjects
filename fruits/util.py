@@ -85,8 +85,7 @@ def pull_fruits_data(transformation=None, param=0):
 
     inflpath = roots["csvs"] + "grapes.csv"
 
-    data, Ys, head = parse_csv(path=inflpath, indeps=5, headers=1,
-                               sep="\t", end="\n", dtype=float)
+    data, Ys, head = parse_csv(path=inflpath, indeps=5, headers=1)
 
     independent = data[:, -3:]
 
@@ -111,13 +110,6 @@ def pull_fruits_data(transformation=None, param=0):
     return independent, dependent
 
 
-def matrix_transformation(independent, dependent, param, transformation):
-    independent = {"pca": do_pca, "lda": do_lda, "ica": do_ica, "ae": do_ae,
-                   "pls": do_pls,
-                   }[transformation](independent, param, dependent)
-    return independent
-
-
 def parameter_transformation(parameter, transformation):
     transformation = transformation[:4].lower()
     if transformation == "sigm":
@@ -137,23 +129,6 @@ def parameter_transformation(parameter, transformation):
     return parameter
 
 
-def dummycoding(independent, dependent):
-    categ = np.array(sorted(list(set(dependent))))
-    dummy = np.arange(len(categ))
-
-    dummy_dict = dict()
-
-    translate = np.vectorize(lambda x: dummy_dict[x])
-
-    for c, d in zip(categ, dummy):
-        dummy_dict[d] = c
-        dummy_dict[c] = d
-
-    dependent = translate(dependent)
-
-    return independent, dependent, translate
-
-
 def priors(dependent, categ=None):
     if categ is None:
         categ = list(set(dependent))
@@ -162,42 +137,3 @@ def priors(dependent, categ=None):
 
 def sigmoid(Z):
     return 1. / (1. + np.exp(-Z))
-
-
-def do_pca(indeps, nfeatures, deps=None):
-    from sklearn.decomposition import PCA
-    model = PCA(nfeatures, whiten=False)
-    indeps = model.fit_transform(indeps)
-    print("Did PCA. Explained variance by PCs:")
-    print(model.explained_variance_ratio_)
-    return indeps
-
-
-def do_lda(indeps, nfeatures, deps):
-    from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-    model = LDA(n_components=nfeatures)
-    indeps = model.fit_transform(indeps, deps)
-    print("Did LDA!")
-    return indeps
-
-
-def do_ica(indeps, nfeatures, deps=None):
-    from csxdata.features.transformation import ICA
-    model = ICA(nfeatures)
-    model.fit(indeps)
-    print("Did ICA!")
-    return model(indeps)
-
-
-def do_ae(indeps, nfeatures, deps=None):
-    from csxdata.features.transformation import Autoencoding
-    model = Autoencoding(nfeatures, epochs=30)
-    model.fit(indeps, deps)
-    return model(indeps)
-
-
-def do_pls(indeps, nfeatures, deps):
-    from csxdata.features.transformation import PLS
-    model = PLS(nfeatures)
-    model.fit(indeps, deps)
-    return model(indeps)

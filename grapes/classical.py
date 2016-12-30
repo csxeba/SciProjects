@@ -1,6 +1,6 @@
 import numpy as np
 
-from project_grapes.misc import pull_data
+from SciProjects.grapes.misc import pull_data
 
 RUNS = 100
 
