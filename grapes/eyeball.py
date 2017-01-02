@@ -1,11 +1,11 @@
 from csxdata import CData
 from csxdata.utilities.highlevel import plot, transform
+from SciProjects.generic import paths
 
+FEATURE = "evjarat"
 
-FEATURE = "évjárat"
-TRANSFORM = "lda"
-
-X, Y = CData
+grapes = CData(*paths["grapes"], feature=FEATURE, cross_val=0, lower=True)
+X, Y = grapes.learning, grapes.lindeps
 
 
 def plot_raw():
@@ -13,17 +13,17 @@ def plot_raw():
 
 
 def plot_pca():
-    lX = transform(X, 2, False, "pca")
+    lX = transform(X, factors=2, get_model=False, method="pca")
     plot(lX, Y, ["PC1", "PC2"], 1)
 
 
 def plot_lda():
-    lX = transform(X, 2, False, "lda", y=Y)
-    plot(lX, Y, ["LF1", "LF2"], 1)
+    lX = transform(X, factors=2, get_model=False, method="lda", y=Y)
+    plot(lX, Y, ["LD1", "LD2"], 1)
 
 
 def plot_ica():
-    lX = transform(X, 2, False, "ica")
+    lX = transform(X, factors=2, get_model=False, method="ica")
     plot(lX, Y, ["IC1", "IC2"], 1)
 
 

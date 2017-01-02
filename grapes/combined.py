@@ -2,14 +2,11 @@ from csxdata import CData
 from csxnet.ann import Network
 from csxnet.brainforge.layers import DenseLayer
 
-from SciProjects.grapes.misc import pull_data
+from SciProjects.grapes import path, indepsn
 from SciProjects.grapes.classical import full_run
 
-grapes = pull_data(frame=True, feature="borrégió")
-grapes.transformation = "std"
 
-
-def autoencoder():
+def autoencoder(grapes):
     ae = Network(input_shape=grapes.neurons_required[0], name="TestAutoEncoder")
     ae.add(DenseLayer(60, activation="tanh"))
     ae.add(DenseLayer(30, activation="tanh"))
@@ -23,12 +20,12 @@ def autoencoder():
     ae.prediction(grapes.learning)
     eX = ae.layers[2].output
 
-    trGrapes = CData((eX, grapes.lindeps))
+    trGrapes = CData((eX, grapes.lindeps), headers=None)
 
     full_run(trGrapes)
 
 
-def neural_switcharoo():
+def neural_switcharoo(grapes):
     model = Network(input_shape=grapes.neurons_required[0], name="GrapesNet")
     model.add(DenseLayer(60, activation="tanh"))
     model.add(DenseLayer(grapes.neurons_required[1], activation="sigmoid"))
@@ -40,9 +37,11 @@ def neural_switcharoo():
     model.prediction(grapes.learning)
     trX = model.layers[-2].output
 
-    trGrapes = CData((trX, grapes.lindeps))
+    trGrapes = CData((trX, grapes.lindeps), headers=None)
 
     full_run(trGrapes)
 
 if __name__ == '__main__':
-    neural_switcharoo()
+    dframe = CData(path, indepsn, headers=1, feature="borregio", lower=True)
+    dframe.transformation = "std"
+    autoencoder(dframe)

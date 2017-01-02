@@ -1,12 +1,15 @@
 import numpy as np
+from csxdata import CData
 
-from SciProjects.grapes.misc import pull_data
+from SciProjects.generic import paths
+
 
 RUNS = 100
 
 
 def get_frame(pretreat="std", param=0):
-    frame = pull_data(frame=True, feature="borrégió")
+    path, indps = paths["grapes"]
+    frame = CData(path, indps, headers=1, feature="borregio", lower=True)
     frame.transformation = (pretreat, param)
     return frame
 

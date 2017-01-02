@@ -1,13 +1,12 @@
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Highway
+from keras.layers import Dense
 from keras.optimizers import *
 
 from csxdata import CData
 from keras.regularizers import WeightRegularizer
-from project_fruits.util import pull_data, pull_validation_data
+from SciProjects.fruits import gyumpath, gyumindeps, zsindpath, zsindeps
 
-TAXLEVEL = "species"
-PARAMSET = "all"
+TAXLEVEL = "Species"
 RUNS = 10
 
 PRETREATMENT = "raw"
@@ -19,14 +18,11 @@ TRANSFORMATION_PARAM = 0
 CROSSVAL = .2
 
 
-def build_net(fanin, outshape):
+def build_net(inshape, outshape):
     network = Sequential([
-        Dense(input_dim=fanin, output_dim=120, activation="tanh",
+        Dense(input_dim=inshape[0], output_dim=120, activation="tanh",
               W_regularizer=WeightRegularizer(l2=0.0)),
-        Highway(activation="tanh"),
-        Highway(activation="tanh"),
-
-        Dense(output_dim=outshape, activation="softmax")
+        Dense(output_dim=outshape[0], activation="softmax")
     ])
     network.compile(SGD(lr=0.01, momentum=0.9), loss="categorical_crossentropy",
                     metrics=["acc"])
@@ -34,8 +30,7 @@ def build_net(fanin, outshape):
 
 
 def full_training(validate=True, dump_weights=False):
-    fruits = CData(pull_data(label=TAXLEVEL, transformation=PRETREATMENT, param=PRETREATMENT_PARAM),
-                   cross_val=0.0)
+    fruits = CData(gyumpath, gyumindeps, feature=TAXLEVEL, cross_val=0.0)
     fruits.transformation = (TRANSFORMATION, TRANSFORMATION_PARAM)
 
     network = build_net(*fruits.neurons_required)
@@ -52,9 +47,9 @@ def full_training(validate=True, dump_weights=False):
         wghts.close()
 
     if validate:
-        vx, vy = pull_validation_data(TAXLEVEL, PARAMSET)
+        vx, vy = CData(zsindpath, zsindeps, cross_val=0.0, feature=TAXLEVEL)
         vx = fruits.transform(vx)
-        vy = fruits._embedding(vy)
+        vy = fruits.embed(vy)
         vacc = network.evaluate(vx, vy, batch_size=len(vy), verbose=0)[-1]
         probs = network.predict_proba(vx, verbose=0)
         preds = network.predict_classes(vx, verbose=0)
@@ -63,17 +58,16 @@ def full_training(validate=True, dump_weights=False):
 
 
 def run():
-    fruits = CData(pull_data(label=TAXLEVEL, transformation=PRETREATMENT, param=PRETREATMENT_PARAM,
-                             paramset=PARAMSET),
-                   cross_val=CROSSVAL)
-    fruits.transformation = "std"
+    fruits = CData(gyumpath, gyumindeps, feature=TAXLEVEL, cross_val=CROSSVAL)
+    fruits.transformation = (TRANSFORMATION, TRANSFORMATION_PARAM)
 
     network = build_net(*fruits.neurons_required)
 
     testing = fruits.table("testing")
-    vx, vy = pull_validation_data(TAXLEVEL, paramset=PARAMSET)
+    zsind = CData(zsindpath, zsindeps, cross_val=0.0, feature=TAXLEVEL)
+    vx, vy = zsind.learning, zsind.lindeps
     vx = fruits.transform(vx)
-    vy = fruits._embedding(vy)
+    vy = fruits.embed(vy)
 
     initc, initacc = network.evaluate(*testing, verbose=0)
     initc, initacc = round(initc, 5), round(initacc, 5)
@@ -89,20 +83,21 @@ def run():
     return tacc, vacc
 
 
-taccs, vaccs = [], []
-for runnum in range(1, RUNS+1):
-    print("\nANN run", runnum, end="\t")
-    tc, vc = run()
-    taccs.append(tc)
-    vaccs.append(vc)
+if __name__ == '__main__':
+    taccs, vaccs = [], []
+    for runnum in range(1, RUNS+1):
+        print("\nANN run", runnum, end="\t")
+        tc, vc = run()
+        taccs.append(tc)
+        vaccs.append(vc)
 
-print("-"*50 + "\nFinal ANN result:")
-print("Testing data:", sum(taccs) / len(taccs), sep="\t")
-print("Validation data:", sum(vaccs) / len(vaccs), sep="\t")
+    print("-"*50 + "\nFinal ANN result:")
+    print("Testing data:", sum(taccs) / len(taccs), sep="\t")
+    print("Validation data:", sum(vaccs) / len(vaccs), sep="\t")
 
-# proba, preds, y, frame = full_training(dump_weights=True)
-# labels = frame.translate(y)
-# chain = "TRUE" + "\t" + "\t".join(frame._embedding._categories) + "\t" + "PRED" + "\n"
-# for label, prob, pred in zip(labels, proba, preds):
-#     chain += label + "\t" + "\t".join(prob.astype(str)) + "\t" + str(pred) + "\n"
-# print(chain)
+    # proba, preds, y, frame = full_training(dump_weights=True)
+    # labels = frame.translate(y)
+    # chain = "TRUE" + "\t" + "\t".join(frame._embedding._categories) + "\t" + "PRED" + "\n"
+    # for label, prob, pred in zip(labels, proba, preds):
+    #     chain += label + "\t" + "\t".join(prob.astype(str)) + "\t" + str(pred) + "\n"
+    # print(chain)

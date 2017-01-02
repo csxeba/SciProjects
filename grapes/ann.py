@@ -2,10 +2,11 @@ import time
 
 from csxdata import CData
 
-from project_grapes.misc import pull_data
+from SciProjects.generic import paths
 
-FEATURE = "fajta"
-# FEATURE = "évjárat"
+
+# FEATURE = "szin"
+FEATURE = "evjarat"
 RUNS = 10
 EPOCHS = 100
 BSIZE = 20
@@ -14,7 +15,8 @@ TRPARAMS = 0, 0, 3, 2, 2
 
 
 def get_frame(transf, params):
-    grapes = pull_data(frame=True, feature=FEATURE)
+    path, indepsn = paths["grapes"]
+    grapes = CData(path, indepsn, headers=1, feature=FEATURE, lower=True)
     grapes.transformation = (transf, params)
     return grapes
 
@@ -59,7 +61,7 @@ def run_forged(grapes):
     # net.describe(1)
     acc = sum(accs) / len(accs)
     print("\r", end="")
-    print("BrainForged Network accuracy: {0:.2%} time: {1} s"
+    print("Brainforged Network accuracy: {0:.2%} time: {1} s"
           .format(acc, int(time.time()-start)))
     return acc
 

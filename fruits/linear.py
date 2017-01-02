@@ -2,9 +2,9 @@ from sklearn.svm import SVC
 
 from csxdata import CData
 
-from project_fruits.util import pull_data, pull_validation_data
+from SciProjects.fruits import gyumpath, gyumindeps, zsindpath, zsindeps
 
-TAXLEVEL = "familia"
+TAXLEVEL = "Familia"
 RUNS = 100
 PRETREATMENT = "raw"
 AFTER_TREATMENT = "std"
@@ -20,13 +20,14 @@ def svm():
         return sum(eq) / len(eq)
 
     def get_data():
-        data = CData(pull_data(label=TAXLEVEL, transformation=None, param=TRANSFORM_PARAM),
-                     cross_val=CROSSVAL)
-        data.transformation = AFTER_TREATMENT
-        lX, lY = data.learning, data.lindeps
-        tX, tY = data.testing, data.tindeps
-        vX, vY = pull_validation_data(TAXLEVEL)
-        vX = data.transform(vX)
+        fruits = CData(gyumpath, gyumindeps, feature=TAXLEVEL, cross_val=CROSSVAL)
+        fruits.transformation = (AFTER_TREATMENT, TRANSFORM_PARAM)
+        zsind = CData(zsindpath, zsindeps, feature=TAXLEVEL, cross_val=0,
+                      transformation=None, param=None)
+        lX, lY = fruits.learning, fruits.lindeps
+        tX, tY = fruits.testing, fruits.tindeps
+        vX, vY = zsind.learning, zsind.lindeps
+        vX = fruits.transform(vX)
         return lX, lY, tX, tY, vX, vY
 
     Xs, Ys, testX, testY, valX, valY = get_data()
