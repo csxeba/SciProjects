@@ -1,11 +1,11 @@
 import os
 
-from utility import inka_root as inka
-from utility import mtr_root as mtr
-from utility import headers_root as headers
-from utility import dataroot
-from utility import setup_environment
-from merge_mtr_data import main as mtrmain
+from SciProjects.trains.utility import inka_root as inka
+from SciProjects.trains.utility import mtr_root as mtr
+from SciProjects.trains.utility import headers_root as headers
+from SciProjects.trains.utility import dataroot
+from SciProjects.trains.utility import setup_environment
+from SciProjects.trains.merge_mtr_data import main as mtrmain
 
 
 def sanity_check(act=False):

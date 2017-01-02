@@ -1,4 +1,4 @@
-from generic import *
+from SciProjects.carcel.generic import *
 
 
 def get_net(fanin, outshape):

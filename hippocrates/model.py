@@ -4,8 +4,8 @@ from keras.layers.convolutional import Convolution3D
 from keras.layers.pooling import MaxPooling3D
 from keras.optimizers import RMSprop
 
-from generic import load_data
-from csxdata.const import roots
+from SciProjects.hippocrates.generic import load_data
+from csxdata import roots
 
 
 def getnet1(inshape):

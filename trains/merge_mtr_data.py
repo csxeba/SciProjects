@@ -1,6 +1,6 @@
 import os
 
-from utility import mtr_root as mtr
+from SciProjects.trains.utility import mtr_root as mtr
 
 
 def sanity_check():
@@ -61,7 +61,7 @@ def main():
 
 
 if __name__ == '__main__':
-    from utility import setup_environment
+    from SciProjects.trains.utility import setup_environment
     setup_environment()
     # sanity_check()
     main()

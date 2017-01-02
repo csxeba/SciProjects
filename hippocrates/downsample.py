@@ -1,6 +1,6 @@
 import pickle
 
-from generic import load_data, roots
+from SciProjects.hippocrates.generic import load_data, roots
 from keras.models import Sequential
 from keras.layers import MaxPooling3D
 

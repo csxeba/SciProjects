@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 
-from csxdata.const import roots
-from csxdata.utilities.nputils import standardize
-from csxdata.utilities.high_utils import image_sequence_to_array as pull_data
-from csxdata.utilities.high_utils import autoencode
+from csxdata import roots
+from csxdata.utilities.vectorops import standardize
+from csxdata.utilities.highlevel import image_sequence_to_array as pull_data
+from csxdata.utilities.highlevel import autoencode
 
 floatX = "float32"
 

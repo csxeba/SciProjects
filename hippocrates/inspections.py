@@ -1,6 +1,6 @@
 import os
 
-from csxdata.const import roots
+from csxdata import roots
 
 hiporoot = roots["raw"] + "Project_Hippocrates/"
 positives = os.listdir(hiporoot + "SM pozitív")

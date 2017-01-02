@@ -2,7 +2,7 @@ import os
 import pickle
 import gzip
 
-from utility import roots
+from SciProjects.trains.utility import roots
 
 ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 TMPFL = "nkhtmp.pkl.gz"

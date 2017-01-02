@@ -1,4 +1,4 @@
-from csxdata.const import roots
+from csxdata import roots
 
 
 def load_data(path=None):
