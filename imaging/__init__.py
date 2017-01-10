@@ -10,4 +10,5 @@ def sanity_check():
     assert ".jpg" in "".join(listdir(projectroot))
     print("Sanity check passed!")
 
+
 sanity_check()
