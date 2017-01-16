@@ -1,5 +1,5 @@
 import numpy as np
-from skimage import measure
+from skimage import measure, feature
 from matplotlib import pyplot as plt
 
 from SciProjects.imaging import pull_data, preprocess, pprint
@@ -15,6 +15,38 @@ SCALE = 0.00858122427983539094650205761317
 UPSCALE = 2.
 verbose = 1
 MINAREA = 10000
+
+
+def algo_fitpolynom(dpic, lpic, nlab, centering=None, show=0):
+    picX, picY = lpic.shape
+    props = [prp for prp in measure.regionprops(lpic) if prp.area > MINAREA]
+    for prp in props:
+        niceleft = prp.image.copy().astype(int)
+        niceright = prp.image.copy().astype(int)
+        edge = np.argwhere(feature.canny(prp.image))
+        leftedge, rightedge = [], []
+        la, ra = leftedge.append, rightedge.append
+        for y in range(picY):
+            ft = [e[1] for e in edge if e[0] == y]
+            if len(ft) == 0:
+                continue
+            la((y, min(ft)))
+            ra((y, max(ft)))
+
+        leftedge, rightedge = np.array(leftedge).T, np.array(rightedge).T
+        leftcurve = np.poly1d(np.polyfit(*leftedge, deg=5))
+        rightcurve = np.poly1d(np.polyfit(*rightedge, deg=5))
+
+        lefti = leftcurve.integ()
+        righti = rightcurve.integ()
+        area = righti - lefti
+
+        # lsp = np.linspace(0, picY, 200)
+        # plt.plot(leftedge[0], leftedge[1], ".", color="red")
+        # plt.plot(rightedge[0], rightedge[1], ".", color="blue")
+        # plt.plot(lsp, leftcurve(lsp), "--", color="red")
+        # plt.plot(lsp, rightcurve(lsp), "--", color="blue")
+        # plt.show()
 
 
 def algo_maxwidth(dpic, lpic, nlab, centerwith, show=0):
@@ -77,4 +109,4 @@ def run(algorithm, **kw):
 
 
 if __name__ == '__main__':
-    run(algo_maxwidth)
+    run(algo_fitpolynom)
