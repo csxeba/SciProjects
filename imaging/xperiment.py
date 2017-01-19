@@ -1,111 +1,122 @@
+import datetime
+
 import numpy as np
-from skimage import measure, feature
+import time
+from scipy.stats import spearmanr
+from scipy import ndimage as ndi
+from skimage import measure, feature, morphology
 from matplotlib import pyplot as plt
 
-from SciProjects.imaging import pull_data, preprocess, pprint
+from SciProjects.imaging import pull_data, preprocess
 
 source = "D:/tmp/jpegs/"
-pics = pull_data(source=source, randomize=True, verbose=1)
 
-# R-G-B
-MAX_LBLS = 3
-# picX, picY, picZ = 1944, 2592, 3
-MAXFSIZE = 50
 SCALE = 0.0085812242798
-UPSCALE = 2.
-verbose = 1
 MINAREA = 10000
+MINHEIGHT = 1000
 
 
-def algo_fitpolynom(dpic, lpic, nlab, **kw):
+def algo_fitpolynom(lpic, **kw):
 
-    show = kw.get("show", False)
+    def extrac_prop_edges(prop, height):
+        y = np.arange(height)
+        edge = feature.canny(prop.image)
+        selem = np.zeros((3, 3))
+        selem[:, 1] = 1
+        edge = morphology.binary_dilation(edge, selem=selem)
+        left = height - np.max(edge[:, ::-1] * y, axis=1)
+        lx = np.argwhere(np.not_equal(left, height)).ravel()
+        left = np.stack((lx, left[lx]))
+        right = np.max(edge * y, axis=1)
+        rx = np.argwhere(np.greater(right, 0)).ravel()
+        right = np.stack((rx, right[rx]))
+        return left, right, lx, rx
 
-    picX, picY = lpic.shape
-    prps = [prp for prp in measure.regionprops(lpic)
-            if prp.area > MINAREA or prp.image.shape[0] > 1000]
-    measurements = []
-    curves = []
-    for prp in prps:
-        x0, y0, x1, y1 = prp.bbox
-        edge = np.argwhere(feature.canny(prp.image))
-        leftedge, rightedge = [], []
-        la, ra = leftedge.append, rightedge.append
-        for y in range(y1):
-            ft = [e[1] for e in edge if e[0] == y]
-            if len(ft) == 0:
-                continue
-            la((y, min(ft)))
-            ra((y, max(ft)))
+    def fit_polynoms_to_edges(left, right, degree):
+        lpoly = np.polyfit(*left, deg=degree)
+        rpoly = np.polyfit(*right, deg=degree)
+        lcurve, rcurve = np.poly1d(lpoly), np.poly1d(rpoly)
+        l_rsq = spearmanr(leftedge[1], lcurve(leftedge[0]))[0] ** 2
+        r_rsq = spearmanr(rightedge[1], rcurve(rightedge[0]))[0] ** 2
+        return lcurve, rcurve, l_rsq, r_rsq
 
-        leftedge, rightedge = np.array(leftedge).T, np.array(rightedge).T
-        lefts = []
-        rights = []
-        for i in range(3, 7):
-            leftcurve, lr, _, _, _ = np.polyfit(*leftedge, deg=i, full=True)
-            rightcurve, rr, _, _, _ = np.polyfit(*rightedge, deg=i, full=True)
-            lefts.append((leftcurve, lr, i))
-            rights.append((rightcurve, rr, i))
-        lefts.sort(key=lambda tup: tup[1])
-        rights.sort(key=lambda tup: tup[1])
-        leftcurve, lr, dl = lefts[0]
-        rightcurve, rr, dr = rights[0]
-        leftcurve, rightcurve = np.poly1d(leftcurve), np.poly1d(rightcurve)
-        curves.append((leftcurve, rightcurve))
-
-        print("left R: {}, deg: {}\nright R: {}, deg: {}".format(lr, dl, rr, dr))
-
-        lefti = leftcurve.integ()
-        righti = rightcurve.integ()
-
+    def integrate_and_calculate_width_cut(lcurve, rcurve, lx, rx):
         # S <x0, x1> f(x) dx - S <x0, x1> g(x) dx
         # ---------------------------------------
         #                x1 - x0
-        avgdistance = ((righti(y1) - righti(y0)) - (lefti(y1) - lefti(y0))) / (y1 - y0)
+        ix0, ix1 = max(lx[0], rx[0]), min(lx[-1], rx[-1])
+        idx = ix1 - ix0
+        li = lcurve.integ()
+        ri = rcurve.integ()
+        wcut = ((ri(ix1) - ri(ix0)) - (li(ix1) - li(ix0))) / idx
+        return wcut
+
+    def display():
+        picX, picY = lpic.shape
+        ax = plt.gca()
+        ax.imshow(lpic)
+        for i, (prp, log, avg) in enumerate(zip(prps, info, measurements), start=1):
+            lcurve, rcurve = log["leftcurve"], log["rightcurve"]
+            x0, y0, x1, y1 = prp.bbox
+            lsp = np.linspace(1, x1-x0, 100, endpoint=False)
+            leftX = lcurve(lsp) + y0
+            leftY = lsp + x0
+            rightX = rcurve(lsp) + y0
+            rightY = lsp + x0
+            ax.plot(leftX, leftY, "--", color="yellow")
+            ax.plot(rightX, rightY, "--", color="yellow")
+            ann = "{}\nleftR:\n{:.4f}\nrightR:\n{:.4f}\nMEAN:\n{:.4f}"\
+                .format(i, log["lr"], log["rr"], avg)
+            ax.text(y1+10, x1 - 550, ann, color="white")
+        ax.set_xlim([0, picY])
+        ax.set_ylim([0, picX])
+        ax.set_title(labeltup[1])
+        plt.show()
+
+    show = kw.get("show", False)
+    deg = kw.get("deg", 3)
+    labeltup = kw.get("labeltup", "")
+
+    measurements = []
+    info = []
+    prps = [prp for prp in sorted(measure.regionprops(lpic), key=lambda x: x.bbox[0])
+            if prp.area > MINAREA or prp.image.shape[0] > MINHEIGHT]
+    for prp in prps:
+        dx, dy = prp.image.shape
+
+        leftedge, rightedge, leftx, rightx = extrac_prop_edges(prp, dy)
+        leftcurve, rightcurve, lr, rr = fit_polynoms_to_edges(leftedge, rightedge, deg)
+        avgdistance = integrate_and_calculate_width_cut(leftcurve, rightcurve, leftx, rightx)
         measurements.append(avgdistance * SCALE)
 
+        inf = {"leftcurve": leftcurve, "lr": lr,
+               "rightcurve": rightcurve, "rr": rr}
+        info.append(inf)
+
     if show:
-        plt.imshow(lpic)
-        lsp = np.linspace(0, picY, 200)
-        for prp, (leftcurve, rightcurve) in zip(prps, curves):
-            x0, y0, x1, y1 = prp.bbox
-            leftX = leftcurve(lsp) + y0
-            leftY = lsp + x0
-            rightX = rightcurve(lsp) + y0
-            rightY = lsp + x0
-            plt.plot(leftX, leftY, "--", color="yellow")
-            plt.plot(rightX, rightY, "--", color="yellow")
-        axes = plt.gca()
-        axes.set_xlim([0, picY])
-        axes.set_ylim([0, picX])
-        plt.show()
+        display()
+
     return measurements
 
 
-def algo_maxwidth(dpic, lpic, nlab, **kw):
-    show = kw.get("show", 0)
-    centering = kw.get("centering", np.mean)
-    if show:
-        plt.imshow(dpic)
-        plt.show()
-        if show > 1:
-            plt.imshow(lpic)
-            plt.show()
+def algo_maxwidth(lpic, **kw):
+    ridged = ndi.distance_transform_edt(lpic)
 
-    bboxes = (prp.bbox for prp in measure.regionprops(lpic) if prp.area > MINAREA)
-    slices = (dpic[:, y0:y1] for x0, y0, x1, y1 in bboxes)
+    if kw.get("show", False):
+        plt.imshow(ridged)
+        plt.show()
+
+    centering = kw.get("centering", np.median)
+    prps = sorted([prp for prp in measure.regionprops(lpic) if prp.area > MINAREA
+                   and prp.image.shape[0] > MINHEIGHT], key=lambda p: p.bbox[0])
+    slices = (ridged[:, y0:y1] for x0, y0, x1, y1 in (prp.bbox for prp in prps))
     maxes = (centering(slc.max(axis=1)) for slc in slices)
-    measurements = [mx * SCALE * UPSCALE for mx in maxes]
-
-    if len(measurements) < nlab:
-        pprint("Skipped {} particles due to suspiciously small area!"
-               .format(nlab - len(measurements)))
+    measurements = [mx * SCALE * 2. for mx in maxes]
 
     return measurements
 
 
-# noinspection PyUnusedLocal
-def algo_area(dpic, lpic, nlab, **kw):
+def algo_area(lpic, **kw):
 
     show = kw.get("show", False)
 
@@ -117,34 +128,46 @@ def algo_area(dpic, lpic, nlab, **kw):
             axes[i].imshow(prp.image)
         plt.show()
 
-    prps = [prp for prp in measure.regionprops(lpic) if prp.area > MINAREA and prp.image.shape[0] > 1000]
-    bboxes = (prp.bbox for prp in prps)
-    measurements = [(prp.area / (x1-x0)) * SCALE for
-                    prp, (x0, y0, x1, y1) in zip(prps, bboxes)]
+    prps = sorted([prp for prp in measure.regionprops(lpic) if
+                   prp.area > MINAREA and prp.image.shape[0] > MINHEIGHT],
+                  key=lambda p: p.bbox[0])
+    dxes = (x1-x0 for x0, y0, x1, y1 in (prp.bbox for prp in prps))
+    measurements = [(prp.area / dx) * SCALE for prp, dx in zip(prps, dxes)]
     if show:
         display()
-
-    if len(measurements) < nlab:
-        print("Skipped {} props with area < 10000".format(nlab - len(measurements)))
 
     return measurements
 
 
-def run(algorithm, **kw):
+def run(randomize=False, verbose=1, **kw):
+    outchain = "PIC\tFITPOLY\tFITMXWD\tFITAREA\n"
     measured = []
-    for i, (dpic, lpic, nlab) in enumerate(map(preprocess, pics), start=1):
-        means = algorithm(dpic, lpic, nlab, **kw)
-        print("\n".join(str(round(m, 3)) for m in means))
-        measured.extend(means)
+    pics = pull_data(source=source, randomize=randomize, verbose=verbose)
+    for i, (pic, path) in enumerate(pics, start=1):
+        lpic = preprocess(pic, dist=False, pictitle=path[1], show=False)
+        res_fitpoly, res_maxwidth, res_area = [algorithm(lpic, **kw) for algorithm in
+                                               (algo_fitpolynom, algo_maxwidth, algo_area)]
+        assert len(res_fitpoly) == len(res_maxwidth) == len(res_area)
+        for j in range(len(res_fitpoly)):
+            samplename = "{}-{}".format(path[1], j)
+            outchain += "{}\t{}\t{}\t{}\n".format(
+                samplename, res_fitpoly[j], res_maxwidth[j], res_area[j])
 
-    pprint("Measurements:")
-    pprint("\n".join(str(m) for m in measured))
+    print("Measurements:")
+    print("\n".join(str(m) for m in measured))
 
     glob = sum(measured) / len(measured)
-    pprint("Global median: in pxls: {}".format(glob))
-    pprint("               in mms : {} mm".format(glob))
-    pprint("Total number of objects inspected: {}".format(len(measured)))
+    print("Global median: in mms: {}".format(glob))
+    print("Total number of objects inspected: {}".format(len(measured)))
+
+    with open("log.txt", "a") as handle:
+        handle.write("\n{}".format(datetime.datetime.now().strftime("-- %Y.%m.%d_%H.%M.%S")))
+        handle.write(outchain)
+        handle.write("GLOBAL MEDIAN: {}\n".format(glob))
+
     return measured
 
 if __name__ == '__main__':
-    run(algo_fitpolynom, show=True)
+    start = time.time()
+    run(show=False, deg=9)
+    print("Run took {:3.f} seconds!".format(time.time()-start))

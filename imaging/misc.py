@@ -3,27 +3,28 @@ import os
 import numpy as np
 from skimage import exposure, filters, measure, feature
 
-# NOT USED ATM
-THRESHOLDS = [1., 2., 0.]
-
 
 def pull_data(source=None, randomize=False, verbose=0):
     from csxdata import roots
     from csxdata.utilities.highlevel import image_to_array
 
     source = roots["ntabpics"] if source is None else source
-    pics = np.array([source + fl for fl in os.listdir(source)])
+    pics = [(source, fl) for fl in os.listdir(source)]
     if randomize:
         np.random.shuffle(pics)
-    for i, path in enumerate(pics, start=1):
+    for i, (path, pic) in enumerate(pics, start=1):
         if verbose:
-            print("PIC {:>{w}}/{}".format(i, len(path), w=len(str(len(path)))))
-        yield image_to_array(path)
+            print("PIC {:>{w}}/{} ({})"
+                  .format(i, len(pics), pic,
+                          w=len(str(len(path)))))
+        yield image_to_array(path + pic), (path, pic)
 
 
-def preprocess(pixels, dist=True, show=True):
+def preprocess(pixels, show=True, **kw):
     from scipy import ndimage as ndi
     from matplotlib import pyplot as plt
+
+    title = kw.get("pictitle", "")
 
     binit = ndi.binary_fill_holes
     nay = np.logical_not
@@ -32,26 +33,26 @@ def preprocess(pixels, dist=True, show=True):
         return exposure.equalize_adapthist(p[:, :, 0])
 
     def binarize_by_hardcoded_thresholding(p):
-        # thresh = p.mean(axis=(0, 1)) * THRESHOLDS
-        thresh = np.array([80, 120, 256])
+        thresh = np.array([80, 256, 256])
         tmp = np.greater_equal(p, thresh[None, None, :]).sum(axis=2)
         binned = np.greater_equal(tmp, 1)
         return nay(binit(nay(binit(binned)), structure=np.ones((5, 5))))
 
     def binarize_by_mean_thresholding(p):
-        thresh = p.mean(axis=(0, 1)) * THRESHOLDS
+        thresh = p.mean(axis=(0, 1)) * [1., 2., 0.]
         tmp = np.greater_equal(p, thresh[None, None, :]).sum(axis=2)
         binned = np.greater_equal(tmp, 1)
         return nay(binit(nay(binit(binned)), structure=np.ones((5, 5))))
 
     def binarize_by_otsu_threasholding(p):
         thresh = filters.threshold_otsu(p)
+        print("OTSU threshold:", thresh)
         tmp = np.greater_equal(p, thresh)
         return nay(binit(nay(binit(tmp))))
 
     def binarize_by_edge_detection(p):
         edges = sum((feature.canny(p[:, :, i] / 255.) for i in range(2)))
-        binned = np.greater_equal(edges, 2)
+        binned = np.greater_equal(edges, 0.)
         plt.imshow(binned)
         plt.show()
         return nay(binit(nay(binit(binned)), structure=np.ones((3, 3))))
@@ -64,15 +65,14 @@ def preprocess(pixels, dist=True, show=True):
     if show:
         fig, axes = plt.subplots(2, 2)
         axes = axes.ravel()
+        titles = "Raw image", "Equalized red", "Binarized", "Labelled"
         for i, im in enumerate((pixels, eqd, filled, labelled)):
             axes[i].imshow(im)
+            axes[i].set_title(titles[i])
+        fig.suptitle(title)
         plt.show()
 
-    if not dist:
-        return labelled, nlab
-
-    ridged = ndi.distance_transform_edt(filled)
-    return ridged, labelled, nlab
+    return labelled
 
 
 def pprint(*args, **kw):
