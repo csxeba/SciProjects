@@ -7,7 +7,7 @@ def sanity_check():
 
     projectroot = roots["ntabpics"]
     assert path.exists(projectroot)
-    assert ".jpg" in "".join(listdir(projectroot))
+    assert ".jpeg" in "".join(listdir(projectroot))
     print("Sanity check passed!")
 
 
