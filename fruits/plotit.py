@@ -31,4 +31,4 @@ def fruits_xperiment(transformation, param):
 
 
 if __name__ == '__main__':
-    fruits_xperiment(transformation="lda", param=2)
+    fruits_xperiment("raw", None)
