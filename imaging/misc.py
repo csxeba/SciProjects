@@ -9,7 +9,8 @@ def pull_data(source=None, randomize=False, verbose=0):
     from csxdata.utilities.highlevel import image_to_array
 
     source = roots["ntabpics"] if source is None else source
-    pics = [(source, fl) for fl in os.listdir(source)]
+    pics = sorted([(source, fl) for fl in os.listdir(source)
+                   if fl[-4:] in ("jpeg", ".jpg")], key=lambda tup: tup[1])
     if randomize:
         np.random.shuffle(pics)
     for i, (path, pic) in enumerate(pics, start=1):
