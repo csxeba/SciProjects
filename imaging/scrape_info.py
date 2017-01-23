@@ -18,7 +18,7 @@ def get_mapping(rootdir):
 
 
 if __name__ == '__main__':
-    zviroot = "/home/csa/Ideglenessen/PIC/"
+    zviroot = "D:/tmp/PIC/"
     mapping = get_mapping(zviroot)
     for fl, (smp, prl) in sorted(mapping.items(), key=lambda it: it[0]):
-        print(f"{fl}-{smp}/{prl}")
+        print("{}-{}/{}".format(fl, smp, prl))
