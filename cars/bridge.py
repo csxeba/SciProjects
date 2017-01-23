@@ -1,36 +1,38 @@
 import socket as sck
+import pickle
 
 import numpy as np
-import cv2
 
-REMOTE = "192.168.1.2", 1234
-LOCAL = "127.0.0.1", 1234
+from matplotlib import pyplot as plt
 
 
-def generate_frames(remote):
-    sock = sck.socket(sck.AF_INET, sck.SOCK_STREAM)
-    sock.bind(remote)
-    sock.listen(1)
+REMOTE = "127.0.0.1", 1234
 
-    conn, addr = sock.accept()
-    print("Connection from {}".format(addr))
 
+def generate_frames(socket):
+    data = b""
     while 1:
-        data = b""
-        while 1:
-            d = conn.recv(1024)
-            if d[-4:] == b"NULL":
-                data += d[:-4]
-                break
-            data += d
-        data = np.fromstring(data).reshape(640, 480, 3)
-        print("SERVER: Got frame of shape:", data.shape)
-        cv2.imshow("RECEIVED!", cv2.cvtColor(data, cv2.COLOR_BGR2GRAY))
-        if cv2.waitKey(1) == 27:
-            cv2.destroyAllWindows()
-            break
+        d = socket.recv(1024)
 
-    print("RunDone!")
+        if d[:6] == b"cnumpy" and data:
+            frame = pickle.loads(data)
+            yield frame
+            data = b""
+
+        data += d
 
 if __name__ == '__main__':
-    generate_frames(LOCAL)
+    sock = sck.socket(sck.AF_INET, sck.SOCK_STREAM)
+    sock.connect(REMOTE)
+
+    print("CLIENT: Connection established!")
+
+    plt.ion()
+    obj = plt.matshow(np.eye(640, 480, dtype=int) * 255)
+
+    for pic in generate_frames(sock):
+        print("CLIENT: Got pic of shape", pic.shape)
+        obj.set_data(pic)
+        plt.pause(1)
+
+    plt.close()
