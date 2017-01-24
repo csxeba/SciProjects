@@ -1,8 +1,12 @@
 import os
 
+import numpy as np
+
+from SciProjects.imaging import Results
+
 
 def get_mapping(rootdir):
-    mapping = {}
+    mp = {}
     pjoin = os.path.join
     for samplename in sorted(filter(
             lambda d: len(d) == 4,
@@ -13,24 +17,40 @@ def get_mapping(rootdir):
             for flnm in sorted(filter(
                     lambda f: f[-4:] == ".zvi",
                     os.listdir(pjoin(rootdir, samplename, parallel)))):
-                mapping[flnm[:-4]] = (samplename, parallel)
-    return mapping
+                mp[flnm[:-4]] = (samplename, parallel)
+    return mp
 
 
 def get_xl_info(rootdir):
-    import openpyxl
+    import xlrd
 
-    mapping = get_mapping(rootdir)
-    xl_fls = {smplnm: rootdir + smplnm + "/" + [xl for xl in os.listdir(rootdir) if xl[-4:] in ("xlsx", ".xls")][0]
-              for smplnm in sorted(mapping.keys())}
+    mp = get_mapping(rootdir)
+    names = [smplnm for smplnm in sorted(mp)]
+    flnmz = []
+    xl_fls = []
+    for smplnm in (s for s in os.listdir(rootdir) if len(s) == 4):
+        xlname = [xl for xl in os.listdir(rootdir + smplnm) if xl[-4:] in ("xlsx", ".xls")][0]
+        xl_fls.append(rootdir + smplnm + "/" + xlname)
+        flz = []
+        for root, dirs, fls in os.walk(rootdir + smplnm):
+            flz += [f[:-4] for f in fls if f[-4:] == ".zvi"]
+        flnmz += flz
 
-    for wbpath in (path for smplnm, path in sorted(xl_fls.items(), key=lambda x: x[0])):
-        wb = openpyxl.load_workbook()
-        ws = wb[0]
+    para1 = []
+    para2 = []
+
+    for smplnm, wbpath in zip(names, xl_fls):
+        wb = xlrd.open_workbook(wbpath)
+        ws = wb.sheet_by_index(0)
+        print(ws.name)
+        smplnm_fromxl = ws.cell(3, 0).value
+        print(smplnm_fromxl)
+        para1.append(np.array([ws.row(19)[i].value for i in range(1, 21)]))
+        para2.append(np.array([ws.row(27)[i].value for i in range(1, 21)]))
+
+    return Results(names, np.array(para1), np.array(para2), flnmz)
 
 
 if __name__ == '__main__':
-    zviroot = "D:/tmp/PIC/"
-    mapping = get_mapping(zviroot)
-    for fl, (smp, prl) in sorted(mapping.items(), key=lambda it1: it1[0]):
-        print("{}-{}/{}".format(fl, smp, prl))
+    r = get_xl_info("D:/tmp/PIC/")
+    print("FIN")

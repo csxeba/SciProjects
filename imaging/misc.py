@@ -4,6 +4,35 @@ import numpy as np
 from skimage import exposure, filters, measure, feature
 
 
+class Results:
+    def __init__(self, names, para1: np.ndarray, para2: np.ndarray, flnms=None):
+        self.names = names
+        self.data = np.stack((para1, para2), axis=1)
+        self.flnms = flnms
+        assert self.data.shape[1] == 2
+
+    @property
+    def means(self):
+        return self.data.mean(axis=(1, 2))
+
+    @property
+    def medians(self):
+        return np.median(self.data, axis=(1, 2))
+
+    def get_data(self, sample, parallel=None):
+        sindex = [i for i, nm in enumerate(self.names) if nm == sample][0]
+        return self.data[sindex, parallel]
+
+    def summary(self):
+        outchain = ""
+        for nm in self.names:
+            para1 = self.get_data(nm, 0)
+            para2 = self.get_data(nm, 0)
+
+
+
+
+
 def pull_data(source=None, randomize=False, verbose=0):
     from csxdata import roots
     from csxdata.utilities.highlevel import image_to_array
@@ -18,10 +47,11 @@ def pull_data(source=None, randomize=False, verbose=0):
             print("PIC {:>{w}}/{} ({})"
                   .format(i, len(pics), pic,
                           w=len(str(len(path)))))
-        yield image_to_array(path + pic), (path, pic)
+        flnm = "".join(pic.split(".")[:-1])
+        yield image_to_array(os.path.join(path, pic)), (path, flnm)
 
 
-def preprocess(pixels, show=True, **kw):
+def preprocess(pixels, show=False, **kw):
     from scipy import ndimage as ndi
     from matplotlib import pyplot as plt
 
