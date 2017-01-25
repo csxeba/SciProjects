@@ -23,9 +23,9 @@ def maize_parameters():
     return means, covar
 
 
-def fake_maize_data():
+def fake_maize_data(N=100):
     means, covar = maize_parameters()
-    return np.random.multivariate_normal(means, covar, size=(100,))
+    return np.random.multivariate_normal(means, covar, size=(N,))
 
 
 def get_sample_xs(average=True):
@@ -55,6 +55,35 @@ def get_sample_xs(average=True):
                 sorted(d.items(), key=lambda t: t[0])}
     else:
         return d
+
+
+def ellipse_params(cov, ellipse_sigma=2):
+    vals, vecs = np.linalg.eig(cov)
+
+    a = np.sqrt(vals[0]) * ellipse_sigma * 2
+    b = np.sqrt(vals[1]) * ellipse_sigma * 2
+    theta = np.arctan2(*vecs[:, 0][::-1])
+
+    return a, b, theta
+
+
+def rotate(vec, theta, ccv=True):
+    transformation = np.array([
+        [np.cos(theta), -np.sin(theta)],
+        [np.sin(theta), np.cos(theta)]])
+    if not ccv:
+        transformation[1, 0] *= -1
+    return vec.dot(transformation)
+
+
+def intersect(ellipse, vector, right=True):
+    a, b = ellipse
+    e, f = vector
+    coef = (a * b) / np.sqrt((a**2 * f**2) + (b**2 * e**2))
+    isct = np.array([coef * e, coef * f])
+    if right:
+        return isct
+    return -isct
 
 
 def xperiment_twoclass_svm():
@@ -104,11 +133,71 @@ def xperiment_codename_tunneling():
         fruit_means = fruit.mean(axis=0)
         line = maize_means - fruit_means
         sample = np.array([dh1, d13c]) - fruit_means
-        enum = (sample @ line)
+        enum = sample @ line
         denom = norm(line)
         proj = enum / denom
         print("{} ({}) maize content: {:>.2%}".format(smplnm, species, proj / norm(line)))
 
 
+def xperiment_codename_tunneling2():
+
+    def display(e1xycov, e2xycov, p1, p2, skiprot=False):
+        from matplotlib import pyplot as plt
+        from matplotlib.patches import Ellipse
+        ax = plt.gca()
+        eigvals1, eigvecs1 = np.linalg.eig(e1xycov[-1])
+        eigvals2, eigvecs2 = np.linalg.eig(e2xycov[-1])
+        (a1, b1), (a2, b2) = np.sqrt(eigvals1) * 4, np.sqrt(eigvals2) * 4
+        if skiprot:
+            theta1 = theta2 = 0.
+        else:
+            theta1 = np.degrees(np.arctan2(*eigvecs1[:, 0][::-1]))
+            theta2 = np.degrees(np.arctan2(*eigvecs2[:, 0][::-1]))
+
+        ell1 = Ellipse(e1xycov[:2], a1, b1, theta1)
+        ell2 = Ellipse(e2xycov[:2], a2, b2, theta2)
+        ell1.set_facecolor("none")
+        ell2.set_facecolor("none")
+        ax.add_artist(ell1)
+        ax.add_artist(ell2)
+        ax.plot([e1xycov[0], e2xycov[0]], [e1xycov[1], e2xycov[1]],
+                color="red")
+        ax.plot(*p1, marker="o", color="black")
+        ax.plot(*p2, marker="o", color="black")
+
+        plt.show()
+
+    mmean, mcov = maize_parameters()
+    mellipse = ellipse_params(mcov)
+    samples = get_sample_xs(True)
+    norm = np.linalg.norm
+    for smplnm in sorted(samples):
+        species, dh1, d13c = samples[smplnm]
+        fruit = pull_fruits_data(species)
+        fmean = fruit.mean(axis=0)
+        fcov = np.cov(fruit.T)
+        fellipse = ellipse_params(fcov)
+        v = mmean - fmean
+        mv = rotate(v, mellipse[-1], ccv=False)
+        fv = rotate(v, fellipse[-1], ccv=False)
+        mellipse_right = float(mmean[0]) > float(fmean[0])
+        pre_mp = intersect(mellipse[:2], mv, right=mellipse_right)
+        pre_fp = intersect(fellipse[:2], fv, right=(not mellipse_right))
+        display([0, 0, mcov],
+                [0, 0, fcov],
+                pre_mp, pre_fp, skiprot=True)
+        mp = mmean + rotate(pre_mp, mellipse[-1])
+        fp = fmean + rotate(pre_fp, fellipse[-1])
+        line = mp - fp
+        sample = np.array([dh1, d13c]) - fmean
+        enum = sample @ line
+        denom = norm(line)
+        proj = enum / denom
+        print("{} ({}) maize content: {:>.2%}".format(smplnm, species, proj / norm(line)))
+        display((mmean[0], mmean[1], mcov),
+                (fmean[0], fmean[1], fcov),
+                mp, fp)
+
+
 if __name__ == '__main__':
-    xperiment_euclidean_distance()
+    xperiment_codename_tunneling2()

@@ -25,9 +25,8 @@ def get_xl_info(rootdir):
     import xlrd
 
     mp = get_mapping(rootdir)
-    names = [smplnm for smplnm in sorted(mp)]
-    flnmz = []
-    xl_fls = []
+    names, flnmz = list(zip(*[(mp, mp[smplnm]) for smplnm in sorted(mp)]))
+    xl_fls = {}
     for smplnm in (s for s in os.listdir(rootdir) if len(s) == 4):
         xlname = [xl for xl in os.listdir(rootdir + smplnm) if xl[-4:] in ("xlsx", ".xls")][0]
         xl_fls.append(rootdir + smplnm + "/" + xlname)
