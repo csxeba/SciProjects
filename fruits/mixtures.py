@@ -1,9 +1,6 @@
 import numpy as np
 
-from scipy.stats.stats import ttest_1samp
-
 from sklearn.svm import SVC
-from sklearn.decomposition import PCA
 
 from csxdata.utilities.parsers import parse_csv
 
@@ -62,7 +59,8 @@ def ellipse_params(cov, ellipse_sigma=2):
 
     a = np.sqrt(vals[0]) * ellipse_sigma * 2
     b = np.sqrt(vals[1]) * ellipse_sigma * 2
-    theta = np.arctan2(*vecs[:, 0][::-1])
+    # theta = np.arctan2(*vecs[:, 0][::-1])
+    theta = np.arctan(vecs[0, 1])
 
     return a, b, theta
 
@@ -72,18 +70,59 @@ def rotate(vec, theta, ccv=True):
         [np.cos(theta), -np.sin(theta)],
         [np.sin(theta), np.cos(theta)]])
     if not ccv:
-        transformation[1, 0] *= -1
-    return vec.dot(transformation)
+        transformation[(0, 1), (1, 0)] *= -1
+    return vec @ transformation
 
 
 def intersect(ellipse, vector, right=True):
     a, b = ellipse
     e, f = vector
-    coef = (a * b) / np.sqrt((a**2 * f**2) + (b**2 * e**2))
-    isct = np.array([coef * e, coef * f])
+    m = f / e
+    coef = (a * b) / np.sqrt(a**2 * m**2 + b**2)
+    isct = np.array([coef, coef * m])
     if right:
         return isct
     return -isct
+
+
+def display(xycov1, xycov2, p1, p2, species, smplnm, smpl=None, skiprot=False,
+            ellipse_sigma=2, dump=True):
+    from matplotlib import pyplot as plt
+    from matplotlib.patches import Ellipse
+
+    def toellipse(params):
+        a, b, theta = ellipse_params(params[-1], ellipse_sigma=ellipse_sigma)
+        if skiprot:
+            theta = 0.
+        xy = params[:2]
+        return Ellipse(xy, a * 2, b * 2, theta)
+
+    ax = plt.gca()
+
+    ell1, ell2 = toellipse(xycov1), toellipse(xycov2)
+    ell1.set_facecolor("none")
+    ell2.set_facecolor("none")
+    ax.add_artist(ell1)
+    ax.add_artist(ell2)
+    ax.plot([xycov1[0], xycov2[0]], [xycov1[1], xycov2[1]],
+            color="blue")
+    ax.plot(*p1, marker="o", color="green")
+    ax.plot(*p2, marker="o", color="blue")
+    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle="--", color="black")
+    if smpl is not None:
+        ax.plot(*smpl, marker="o", color="red")
+    eps = 0
+    ax.set_xlim([min(ell1.center[0]-ell1.width-eps, ell2.center[0]-ell2.width-eps),
+                max(ell1.center[0]+ell1.width+eps, ell2.center[0]+ell2.width+eps)])
+    ax.set_ylim([min(ell1.center[1]-ell1.height-eps, ell2.center[1]-ell2.height-eps),
+                max(ell1.center[1]+ell1.height+eps, ell2.center[1]+ell2.height+eps)])
+    ax.set_xlabel("$D/H_I$")
+    ax.set_ylabel(r"$\delta^{13}C$")
+
+    plt.title("{} ({}) vs. Kukorica".format(smplnm, species), y=1.05)
+    if dump:
+        plt.savefig("D:/tmp/alkpics/{}.png".format(smplnm), bbox_inches="tight")
+    plt.close()
 
 
 def xperiment_twoclass_svm():
@@ -140,33 +179,6 @@ def xperiment_codename_tunneling():
 
 
 def xperiment_codename_tunneling2():
-
-    def display(e1xycov, e2xycov, p1, p2, skiprot=False):
-        from matplotlib import pyplot as plt
-        from matplotlib.patches import Ellipse
-        ax = plt.gca()
-        eigvals1, eigvecs1 = np.linalg.eig(e1xycov[-1])
-        eigvals2, eigvecs2 = np.linalg.eig(e2xycov[-1])
-        (a1, b1), (a2, b2) = np.sqrt(eigvals1) * 4, np.sqrt(eigvals2) * 4
-        if skiprot:
-            theta1 = theta2 = 0.
-        else:
-            theta1 = np.degrees(np.arctan2(*eigvecs1[:, 0][::-1]))
-            theta2 = np.degrees(np.arctan2(*eigvecs2[:, 0][::-1]))
-
-        ell1 = Ellipse(e1xycov[:2], a1, b1, theta1)
-        ell2 = Ellipse(e2xycov[:2], a2, b2, theta2)
-        ell1.set_facecolor("none")
-        ell2.set_facecolor("none")
-        ax.add_artist(ell1)
-        ax.add_artist(ell2)
-        ax.plot([e1xycov[0], e2xycov[0]], [e1xycov[1], e2xycov[1]],
-                color="red")
-        ax.plot(*p1, marker="o", color="black")
-        ax.plot(*p2, marker="o", color="black")
-
-        plt.show()
-
     mmean, mcov = maize_parameters()
     mellipse = ellipse_params(mcov)
     samples = get_sample_xs(True)
@@ -181,22 +193,51 @@ def xperiment_codename_tunneling2():
         mv = rotate(v, mellipse[-1], ccv=False)
         fv = rotate(v, fellipse[-1], ccv=False)
         mellipse_right = float(mmean[0]) > float(fmean[0])
-        pre_mp = intersect(mellipse[:2], mv, right=mellipse_right)
-        pre_fp = intersect(fellipse[:2], fv, right=(not mellipse_right))
-        display([0, 0, mcov],
-                [0, 0, fcov],
-                pre_mp, pre_fp, skiprot=True)
+        pre_mp = intersect(mellipse[:2], mv, right=(not mellipse_right))
+        pre_fp = intersect(fellipse[:2], fv, right=mellipse_right)
         mp = mmean + rotate(pre_mp, mellipse[-1])
         fp = fmean + rotate(pre_fp, fellipse[-1])
         line = mp - fp
-        sample = np.array([dh1, d13c]) - fmean
+        pre_sample = np.array([dh1, d13c])
+        sample = pre_sample - fp
         enum = sample @ line
         denom = norm(line)
         proj = enum / denom
         print("{} ({}) maize content: {:>.2%}".format(smplnm, species, proj / norm(line)))
         display((mmean[0], mmean[1], mcov),
                 (fmean[0], fmean[1], fcov),
-                mp, fp)
+                mp, fp, species, smplnm, smpl=pre_sample,
+                dump=True)
+
+
+def tryhard():
+    from matplotlib import pyplot as plt
+    from matplotlib.patches import Ellipse
+
+    cov = np.array(((1.6818, 0.2), (0.2, 0.7403)))
+    e, f = 10, 3
+    eigvals, eigvegs = np.linalg.eig(cov)
+    a, b = np.sqrt(eigvals[0]) * 4, np.sqrt(eigvals[1] * 4)
+    risct = intersect([a, b], [e, f])
+    lisct = intersect([a, b], [e, f])
+    print("EIG:", eigvals)
+    print("AB:", a, b)
+    print("EF:", e, f)
+    print("R, L:", risct, lisct, sep=", ")
+
+    xXtreme = [-a-5, a+5]
+    yXtreme = [-b-5, b+5]
+
+    ax = plt.gca()
+    el = Ellipse([0, 0], a, b, color="red")
+    el.set_facecolor("none")
+    ax.add_artist(el)
+    ax.plot([0, e], [0, f], color="red")
+    ax.plot(*risct, marker="o", color="black")
+    ax.plot(*lisct, marker="o", color="black")
+    ax.set_xlim(xXtreme)
+    ax.set_ylim(yXtreme)
+    plt.show()
 
 
 if __name__ == '__main__':
