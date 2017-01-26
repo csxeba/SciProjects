@@ -68,7 +68,10 @@ def algo_fitpolynom(prps, **kw):
         ax.set_ylim([0, picX])
         ax.set_title(labeltup[1])
         if savepath is not None:
-            fig.savefig(savepath)
+            try:
+                fig.savefig(savepath)
+            except:
+                pass
         if show:
             plt.show()
 

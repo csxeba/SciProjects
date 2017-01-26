@@ -1,12 +1,11 @@
 import sys
 import time
-import datetime
 
 from skimage import measure
 
 from csxdata import roots
 
-from SciProjects.imaging import pull_data, preprocess, Results
+from SciProjects.imaging import pull_data, preprocess
 from SciProjects.imaging.scrape_info import get_mapping
 from SciProjects.imaging.algorithm import *
 
@@ -21,42 +20,39 @@ MINHEIGHT = 1000
 
 
 def run(randomize=False, verbose=1, **kw):
-    outchain = "PIC\tFITPOLY\tFITMXWD\tFITAREA\n"
+    outchain = "PIC\tSMPL\tRPLC\tPRP\tFITPOLY\tFITMXWD\tFITAREA\n"
     pics = pull_data(source=source, randomize=randomize, verbose=verbose)
     mapping = get_mapping(root)
-    resultdict = {}
+    saveroot = kw.get("savepath", "")
 
     for i, (pic, path) in enumerate(pics, start=1):
+        assert len(path) == 2, "Died: path: {}".format(path)
         smplnm, prll = mapping[path[1]]
 
         lpic = preprocess(pic, dist=False, pictitle=path[1])
         kw["lpic"] = lpic
         # kw["savepath"] = annotpath + path[-1]
         kw["labeltup"] = pic, path
+        if "savepath" in kw:
+            kw["savepath"] = saveroot + "annot_" + path[1] + ".png"
 
         prps = sorted([prp for prp in measure.regionprops(lpic) if prp.area > MINAREA
                        and prp.image.shape[0] > MINHEIGHT], key=lambda p: p.bbox[0])
-        results = algo_fitpolynom(prps, **kw)
 
-        if smplnm not in resultdict:
-            resultdict[smplnm] = [[], []]
+        results = np.array([algo(prps, **kw) for algo in algorithms])
 
-        resultdict[smplnm][int(prll)-1] = results
+        assert results.ndim == 2
 
-    with open("log.txt", "a") as handle:
-        handle.write("\n{}\n".format(datetime.datetime.now().strftime("-- %Y.%m.%d_%H.%M.%S")))
+        for j, res in enumerate(results.T, start=1):
+            outchain += "\t".join((path[1], smplnm + "_", prll, str(i))) + "\t"
+            outchain += "\t".join(res.astype(str)).replace(".", ",")
+            outchain += "\n"
+
+    with open("log.txt", "w") as handle:
+        # handle.write("\n{}\n".format(datetime.datetime.now().strftime("-- %Y.%m.%d_%H.%M.%S")))
         handle.write(outchain)
-
-    names = sorted(resultdict)
-    para1 = []
-    para2 = []
-    for name in names:
-        para1 += resultdict[name][0]
-        para2 += resultdict[name][1]
-
-    return Results(names, para1, para2)
 
 if __name__ == '__main__':
     start = time.time()
-    res = run(show=False, deg=5, SCALE=SCALE, randomize=True)
+    run(show=False, deg=1, SCALE=SCALE, randomize=True, savepath="d:/tmp/annotated/")
     print("Run took {:.3f} seconds!".format(time.time()-start))

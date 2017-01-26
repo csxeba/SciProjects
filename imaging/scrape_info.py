@@ -2,8 +2,6 @@ import os
 
 import numpy as np
 
-from SciProjects.imaging import Results
-
 
 def get_mapping(rootdir):
     mp = {}
@@ -25,20 +23,29 @@ def get_xl_info(rootdir):
     import xlrd
 
     mp = get_mapping(rootdir)
-    names, flnmz = list(zip(*[(mp, mp[smplnm]) for smplnm in sorted(mp)]))
-    xl_fls = {}
+    names = sorted(mp.keys())
+    replicate = []
+    xl_fls = {smplnm: [] for smplnm in names}
+    flnmz = {smplnm: [] for smplnm in names}
     for smplnm in (s for s in os.listdir(rootdir) if len(s) == 4):
         xlname = [xl for xl in os.listdir(rootdir + smplnm) if xl[-4:] in ("xlsx", ".xls")][0]
-        xl_fls.append(rootdir + smplnm + "/" + xlname)
+        xlpath = rootdir + smplnm + "/" + xlname
+        xl_fls[smplnm].append(xlpath)
+
         flz = []
         for root, dirs, fls in os.walk(rootdir + smplnm):
-            flz += [f[:-4] for f in fls if f[-4:] == ".zvi"]
-        flnmz += flz
+            got = [f[:-4] for f in fls if f[-4:] == ".zvi"]
+            if len(got) > 0:
+                replicate.append(int(root.split(os.sep)[-1]))
+                flz += got
+        flnmz[smplnm] += flz
 
     para1 = []
     para2 = []
 
-    for smplnm, wbpath in zip(names, xl_fls):
+    for smplnm in names:
+        wbpath = xl_fls[smplnm]
+
         wb = xlrd.open_workbook(wbpath)
         ws = wb.sheet_by_index(0)
         print(ws.name)
@@ -46,8 +53,6 @@ def get_xl_info(rootdir):
         print(smplnm_fromxl)
         para1.append(np.array([ws.row(19)[i].value for i in range(1, 21)]))
         para2.append(np.array([ws.row(27)[i].value for i in range(1, 21)]))
-
-    return Results(names, np.array(para1), np.array(para2), flnmz)
 
 
 if __name__ == '__main__':
