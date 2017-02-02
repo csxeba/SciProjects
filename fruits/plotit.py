@@ -23,7 +23,7 @@ axlb = {
 
 
 def fruits_xperiment(transformation, param):
-    X, y, header = parse_csv(gyumpath, gyumindeps, feature="Familia", absval=True)
+    X, y, header = parse_csv(gyumpath, gyumindeps, feature="Species", absval=True)
     lX = transform(X, factors=param, get_model=False, method=transformation, y=y)
     plot(lX, np.vectorize(lambda x: x[:4])(y),
          axlabels=axlb[transformation],

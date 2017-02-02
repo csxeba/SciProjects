@@ -70,10 +70,11 @@ def algo_fitpolynom(prps, **kw):
         if savepath is not None:
             try:
                 fig.savefig(savepath)
-            except:
-                pass
+            except MemoryError:
+                print("Failed to save to {}".format(savepath))
         if show:
             plt.show()
+        plt.close()
 
     measurements = []
     info = []
@@ -135,4 +136,4 @@ def algo_area(prps, **kw):
     return measurements
 
 
-algorithms = algo_fitpolynom, algo_maxwidth, algo_area
+algorithms = [algo_fitpolynom, algo_maxwidth, algo_area]

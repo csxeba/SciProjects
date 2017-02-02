@@ -54,5 +54,5 @@ def run(randomize=False, verbose=1, **kw):
 
 if __name__ == '__main__':
     start = time.time()
-    run(show=False, deg=1, SCALE=SCALE, randomize=True, savepath="d:/tmp/annotated/")
+    run(show=False, deg=5, SCALE=SCALE, randomize=True, savepath="d:/tmp/annotated/")
     print("Run took {:.3f} seconds!".format(time.time()-start))

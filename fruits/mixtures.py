@@ -1,5 +1,4 @@
 import numpy as np
-
 from sklearn.svm import SVC
 
 from csxdata.utilities.parsers import parse_csv
@@ -23,6 +22,29 @@ def maize_parameters():
 def fake_maize_data(N=100):
     means, covar = maize_parameters()
     return np.random.multivariate_normal(means, covar, size=(N,))
+
+
+def get_sample_xs_rasberries(average=True):
+    d = {
+     "15070049": ("Malna",
+              (105.13,), (-16.44,)),
+     "TM50": ("Meggy",
+              (104.74,), (-20.05,)),
+     "TS50": ("Szilva",
+              (104.385,), (-18.33,)),
+     "TA70": ("Alma",
+              (105.23,), (-17.64,)),
+     "TA50": ("Alma",
+              (103.28,), (-20.06,)),
+     "TA30": ("Alma",
+              (101.36,), (-23.31,))
+    }
+    if average:
+        return {smpname: (spec, np.mean(dh1), np.mean(d13c))
+                for smpname, (spec, dh1, d13c) in
+                sorted(d.items(), key=lambda t: t[0])}
+    else:
+        return d
 
 
 def get_sample_xs(average=True):
@@ -147,16 +169,46 @@ def xperiment_twoclass_svm():
 
 
 def xperiment_euclidean_distance():
+
+    def euclidean(sample, reference):
+        return np.sqrt((sample - reference)**2).sum()
+
     maize_center = maize_parameters()[0]
     samples = get_sample_xs()
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
-        fruit_center = pull_fruits_data(species).mean(axis=0)
+        fruit_center = pull_fruits_data(species).mean(axis=0) + 0.6
 
-        s = np.array([dh1, d13c])
+        s = np.array([dh1, d13c]) - 0.6
 
-        d1 = np.sqrt((fruit_center - s)**2).sum()
-        d2 = np.sqrt((maize_center - s)**2).sum()
+        d1 = euclidean(s, fruit_center)
+        d2 = euclidean(s, maize_center)
+
+        print("{} ({}) maize content: {:>.4%}".format(smplnm, species, (d1 / (d1+d2))))
+
+
+def xperiment_mahalanobis_distance():
+
+    def mahal(p1, m2, cov2):
+        dif = p1 - m2
+        icov = np.linalg.inv(cov2)
+        a = dif.dot(icov)
+        b = a.dot(dif.T)
+        c = np.sqrt(b)
+        return c
+
+    mmean, mcov = maize_parameters()
+    samples = get_sample_xs()
+    for smplnm in sorted(samples):
+        species, dh1, d13c = samples[smplnm]
+        fruit_data = pull_fruits_data(species)
+        fmean = fruit_data.mean(axis=0) + 0.6
+        fcov = np.cov(fruit_data.T)
+
+        s = np.array([dh1, d13c]) - 0.6
+
+        d1 = mahal(s, fmean, fcov)
+        d2 = mahal(s, mmean, mcov)
 
         print("{} ({}) maize content: {:>.4%}".format(smplnm, species, (d1 / (d1+d2))))
 
@@ -169,9 +221,10 @@ def xperiment_codename_tunneling():
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
         fruit = pull_fruits_data(species)
-        fruit_means = fruit.mean(axis=0)
+        fruit_means = fruit.mean(axis=0) + 0.6
         line = maize_means - fruit_means
-        sample = np.array([dh1, d13c]) - fruit_means
+        sample = np.array([dh1, d13c]) - 0.6
+        sample -= fruit_means
         enum = sample @ line
         denom = norm(line)
         proj = enum / denom
@@ -186,7 +239,7 @@ def xperiment_codename_tunneling2():
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
         fruit = pull_fruits_data(species)
-        fmean = fruit.mean(axis=0)
+        fmean = fruit.mean(axis=0) + np.array([0.6, 0.6])
         fcov = np.cov(fruit.T)
         fellipse = ellipse_params(fcov)
         v = mmean - fmean
@@ -198,7 +251,7 @@ def xperiment_codename_tunneling2():
         mp = mmean + rotate(pre_mp, mellipse[-1])
         fp = fmean + rotate(pre_fp, fellipse[-1])
         line = mp - fp
-        pre_sample = np.array([dh1, d13c])
+        pre_sample = np.array([dh1, d13c]) - 0.6
         sample = pre_sample - fp
         enum = sample @ line
         denom = norm(line)
@@ -210,35 +263,16 @@ def xperiment_codename_tunneling2():
                 dump=True)
 
 
-def tryhard():
-    from matplotlib import pyplot as plt
-    from matplotlib.patches import Ellipse
-
-    cov = np.array(((1.6818, 0.2), (0.2, 0.7403)))
-    e, f = 10, 3
-    eigvals, eigvegs = np.linalg.eig(cov)
-    a, b = np.sqrt(eigvals[0]) * 4, np.sqrt(eigvals[1] * 4)
-    risct = intersect([a, b], [e, f])
-    lisct = intersect([a, b], [e, f])
-    print("EIG:", eigvals)
-    print("AB:", a, b)
-    print("EF:", e, f)
-    print("R, L:", risct, lisct, sep=", ")
-
-    xXtreme = [-a-5, a+5]
-    yXtreme = [-b-5, b+5]
-
-    ax = plt.gca()
-    el = Ellipse([0, 0], a, b, color="red")
-    el.set_facecolor("none")
-    ax.add_artist(el)
-    ax.plot([0, e], [0, f], color="red")
-    ax.plot(*risct, marker="o", color="black")
-    ax.plot(*lisct, marker="o", color="black")
-    ax.set_xlim(xXtreme)
-    ax.set_ylim(yXtreme)
-    plt.show()
-
-
 if __name__ == '__main__':
+    print("Euklideszi távolság")
+    print("-------------------")
+    xperiment_euclidean_distance()
+    print("\nMahalanobis távolság")
+    print("--------------------")
+    xperiment_mahalanobis_distance()
+    print("\nGeometriai, átlagokból")
+    print("----------------------")
+    xperiment_codename_tunneling()
+    print("\nGeometriai, 95% interszekciótól")
+    print("-------------------------------")
     xperiment_codename_tunneling2()
