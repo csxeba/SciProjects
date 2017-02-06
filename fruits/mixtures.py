@@ -1,13 +1,12 @@
 import numpy as np
-from sklearn.svm import SVC
+# from sklearn.svm import SVC
 
+from csxdata import roots
 from csxdata.utilities.parsers import parse_csv
-
-from SciProjects.fruits import gyumpath
 
 
 def pull_fruits_data(fruit):
-    X, Y, head = parse_csv(gyumpath, indeps=4, filterby="Species", selection=fruit)
+    X, Y, head = parse_csv(roots["csvs"] + "kozma.csv", indeps=4, filterby="Species", selection=fruit)
     return X[:, (0, 2)]
 
 
@@ -27,7 +26,7 @@ def fake_maize_data(N=100):
 def get_sample_xs_rasberries(average=True):
     d = {
      "15070049": ("Malna",
-              (105.13,), (-16.44,)),
+                  (105.13,), (-16.44,)),
      "TM50": ("Meggy",
               (104.74,), (-20.05,)),
      "TS50": ("Szilva",
