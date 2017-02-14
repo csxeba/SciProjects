@@ -43,10 +43,10 @@ class PlaceType(ABC):
 
     def geocode(self):
         if self.x or self.y == "none":
-            print("Skipping invalid address:", self.address)
+            print("\nSkipping invalid address:{}\n".format(self.address))
             return
         if self.x or self.y or self.found:
-            print("Skipping already geocoded address:", self.address)
+            print("\nSkipping already geocoded address:{}\n".format(self.address))
             return
         self.x, self.y, self.found = API.geocode(self.address)
 

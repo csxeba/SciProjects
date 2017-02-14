@@ -55,21 +55,27 @@ def geocode_placenames():
     nc = sorted(list(set([ln.strip() for ln in open(root + "nice.csv")])))
 
     objects = []
-    input("DOING HRSZ! ({})".format(len(hr)))
-    objects += [HRSZ(hrsz) for hrsz in hr]
+    # input("DOING HRSZ! ({})".format(len(hr)))
+    # objects += [HRSZ(hrsz) for hrsz in hr]
     input("DOING NiceAddress! ({})".format(len(nc)))
     objects += [NiceAddress(nice) for nice in nc]
-    input("DOING KTBT! ({})".format(len(kt)))
-    objects += [KTBT(ktbt) for ktbt in kt]
+    # input("DOING KTBT! ({})".format(len(kt)))
+    # objects += [KTBT(ktbt) for ktbt in kt]
 
-    handle = open(root + "geocoded.csv", "r")
-    addresses = [line[-1] for line in handle]
-    handle.close()
+    try:
+        handle = open(root + "geocoded.csv", "r")
+    except FileNotFoundError:
+        addresses = []
+    else:
+        addresses = [line[-1] for line in handle]
+        handle.close()
+
     handle = open(root + "geocoded.csv", "a")
     handle.write("RAW\tADDR\tX\tY\tFOUND\n")
     for i, obj in enumerate(objects, start=1):
         print(f"\rDoing {i:>4}/{len(objects)}", end="")
         if obj.found in addresses:
+            print("obj found in addresses!")
             continue
         obj.geocode()
         addresses.append(obj.found)
