@@ -1,7 +1,6 @@
 import numpy as np
-
+from mobilgeo.geocoding.utility import haversine, euclidean, sort_coords
 from shapefile import Reader
-from SciProjects.mobilgeo.utility import haversine, euclidean, sort_coords
 
 # Header of shapefile records:
 # ('DeletionFlag', 'C', 1, 0)

@@ -1,8 +1,7 @@
 import unittest
 
 import numpy as np
-
-from SciProjects.mobilgeo.utility import argsort_coords
+from mobilgeo.geocoding.utility import argsort_coords
 
 
 A = np.array([[0.3533399, -0.35780151],
