@@ -4,17 +4,15 @@ from csxdata.utilities.vectorops import argfilter
 from SciProjects.mobilgeo.geocoding.placetypes import *
 
 
+@np.vectorize
 def fix_carno(carno: str):
     return carno.replace(" ", "").replace("-", "")
 
-
+@np.vectorize
 def fix_address(chain):
     return chain\
         .replace(",", " ")\
         .replace(".", " ")
-
-fix_carno = np.vectorize(fix_carno)
-fix_address = np.vectorize(fix_address)
 
 
 def read(path):
@@ -48,37 +46,62 @@ def extract_unique_placenames():
         handle.write("\n".join(pn for pn in placenames if pn))
 
 
-def geocode_placenames():
-    root = "/home/csa/Project_MobilGeo/cimek/"
-    kt = sorted(list(set([ln.strip() for ln in open(root + "ktbt.csv")])))
-    hr = sorted(list(set([ln.strip() for ln in open(root + "hrsz.csv")])))
-    nc = sorted(list(set([ln.strip() for ln in open(root + "nice.csv")])))
+def separate_classes(stream):
+    cache = AddressCache("/home/csa/Project_MobilGeo/.cache/addresses.pkl")
+    dothese = sorted(list(filter(lambda a: a not in cache, stream)))
 
-    objects = []
-    # input("DOING HRSZ! ({})".format(len(hr)))
-    # objects += [HRSZ(hrsz) for hrsz in hr]
-    input("DOING NiceAddress! ({})".format(len(nc)))
-    objects += [NiceAddress(nice) for nice in nc]
-    # input("DOING KTBT! ({})".format(len(kt)))
-    # objects += [KTBT(ktbt) for ktbt in kt]
+    ktbt = lambda a:\
+            "külter" in a.lower() or\
+            "belter" in a.lower() or\
+            "kt" in a.lower() or\
+            "bt" in a.lower()
+    hrsz = lambda a:\
+            "hrsz" in a.lower() or\
+            "helyrajz" in a.lower()
+
+    ktbtstream = sorted(list(filter(ktbt, dothese)))
+    hrszstream = sorted(list(filter(hrsz, dothese)))
+    nicestream = sorted(list(filter(lambda a: not (a in ktbtstream or
+                                                   a in hrszstream),
+                                    dothese)))
+
+    objectify = [NiceAddress(addr, cache.set) for addr in nicestream]  # +
+                 # [HRSZ(addr, cache.set) for addr in hrszstream] +
+                 # [KTBT(addr, cache.set) for addr in hrszstream])
+
+    list(map(cache.set, objectify))
+    objectify += [cache.get(rawname) for rawname in
+                  cache.dct if rawname not in dothese]
+    cache.dump()
+    return sorted(objectify, key=lambda a: a.rawname)
+
+
+def geocode_placenames():
+    root = "/home/csa/Project_MobilGeo/"
+    inpath = root + "Helyek.csv"
+    with open(inpath) as handle:
+        objects = separate_classes(handle)
+        handle.close()
 
     try:
         handle = open(root + "geocoded.csv", "r")
     except FileNotFoundError:
         addresses = []
+        header = "RAW\tADDR\tX\tY\tFOUND\n"
     else:
         addresses = [line[-1] for line in handle]
         handle.close()
+        header = ""
 
     handle = open(root + "geocoded.csv", "a")
-    handle.write("RAW\tADDR\tX\tY\tFOUND\n")
+    handle.write(header)
     for i, obj in enumerate(objects, start=1):
         print(f"\rDoing {i:>4}/{len(objects)}", end="")
-        if obj.found in addresses:
-            print("obj found in addresses!")
+        if obj.address in addresses:
+            print(" obj found in addresses!")
             continue
         obj.geocode()
-        addresses.append(obj.found)
+        addresses.append(obj.address)
         handle.write(obj.to_outputline())
     print()
 

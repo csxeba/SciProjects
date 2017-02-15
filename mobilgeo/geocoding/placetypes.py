@@ -1,8 +1,14 @@
+import abc
 import time
 import string
-from abc import ABC, abstractmethod
+import pickle
+
+from os.path import exists
 
 from geocoder import google
+
+
+CACHE = "/home/csa/Project_MobilGeo/.cache/cch.pkl"
 
 
 def isdigit(chain, *include):
@@ -13,26 +19,82 @@ def isdigit(chain, *include):
     return digit
 
 
-class API:
+class AddressCache:
 
-    coder = google
+    def __init__(self, cchpath=CACHE):
+        if exists(cchpath):
+            handle = open(cchpath, "rb")
+            try:
+                self.dct = pickle.load(handle)
+            except EOFError:
+                self.dct = {}
+            finally:
+                handle.close()
+        else:
+            self.dct = {}
+        self.cchpath = cchpath
 
-    @staticmethod
-    def geocode(addr):
-        obj = API.coder(addr)
+
+    def get(self, rawname):
+        if rawname not in self.dct:
+            return None
+        else:
+            return self.dct[rawname]
+
+    def set(self, placeobject):
+        self.dct[placeobject.rawname] = placeobject
+
+    def __contains__(self, rawname):
+        if isinstance(rawname, PlaceType):
+            rawname = rawname.rawname
+        return rawname in self.dct
+
+    def dump(self):
+        handle = open(self.cchpath, "wb")
+        pickle.dump(self.dct, handle)
+
+
+class _API:
+
+    def __init__(self):
+
+        self.coder = google
+        self.api = "google"
+
+    def switchapi(self):
+        print(f"Switching API from {self.api}", end=" ")
+        if self.api == "google":
+            from geocoder import osm as api
+            self.api = "osm"
+        elif self.api == "osm":
+            from geocoder import arcgis as api
+            self.api = "arcgis"
+        elif self.api == "arcgis":
+            raise RuntimeError("Exhausted possible APIs!")
+        else:
+            raise RuntimeError
+        print(f"to {self.api}")
+        self.coder = api
+
+    def geocode(self, addr):
+        obj = self.coder(addr)
         if "limit" in obj.status.lower():
             for s in range(3, 0, -1):
                 time.sleep(1)
                 print("\nQuery limit reached, waiting for API... {}".format(s), end="")
 
-            obj = API.coder(addr)
+            obj = self.coder(addr)
         if "limit" in obj.status.lower():
-            raise RuntimeError("\nQuery limit reached with geocoder API. Exiting!".format())
+            print("\nQuery limit reached with geocoder API. Switching!".format())
+            self.switchapi()
         return obj.x, obj.y, obj.address
 
+gcapi = _API()
 
-class PlaceType(ABC):
-    def __init__(self, rawname):
+
+class PlaceType(abc.ABC):
+
+    def __init__(self, rawname, cacher=None):
         self.rawname = rawname
         self.address = None
         self.x = None
@@ -40,6 +102,9 @@ class PlaceType(ABC):
         self.found = None
         if self.reparse():
             self.x = self.y = self.address = "none"
+        if cacher is not None:
+            cacher(self)
+
 
     def geocode(self):
         if self.x or self.y == "none":
@@ -48,31 +113,33 @@ class PlaceType(ABC):
         if self.x or self.y or self.found:
             print("\nSkipping already geocoded address:{}\n".format(self.address))
             return
-        self.x, self.y, self.found = API.geocode(self.address)
+        self.x, self.y, self.found = gcapi.geocode(self.address)
 
     def to_outputline(self):
-        return "\t".join((str(self.rawname),
-                          str(self.address),
+        return "\t".join((str(self.rawname.strip()),
+                          str(self.address.strip()),
                           str(self.x),
                           str(self.y),
-                          str(self.found))) + "\n"
+                          str(self.found.strip()))) + "\n"
 
-    @abstractmethod
+    @abc.abstractmethod
     def reparse(self):
         raise NotImplementedError
 
 
 class NiceAddress(PlaceType):
-    def __init__(self, rawname):
-        super().__init__(rawname)
+
+    def __init__(self, rawname, cacher=None):
+        super().__init__(rawname, cacher)
 
     def reparse(self):
         self.address = "Hungary, " + self.rawname
 
 
 class KTBT(PlaceType):
-    def __init__(self, rawname):
-        super().__init__(rawname)
+
+    def __init__(self, rawname, cacher):
+        super().__init__(rawname, cacher)
 
     def reparse(self):
         name = self.rawname\
@@ -95,7 +162,8 @@ class KTBT(PlaceType):
             chain += "\nKeep these [0] > "
             chosen = input(chain)
             if chosen == "-1":
-                return 1
+                self.address = "Hungary, "
+                return
             if not chosen:
                 chosen = 0
             capitalized = capitalized[int(chosen)]
@@ -105,8 +173,9 @@ class KTBT(PlaceType):
 
 
 class HRSZ(PlaceType):
-    def __init__(self, rawname):
-        super().__init__(rawname)
+
+    def __init__(self, rawname, cacher):
+        super().__init__(rawname, cacher)
 
     def reparse(self):
         name = self.rawname\
