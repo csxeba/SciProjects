@@ -65,11 +65,11 @@ class _API:
         print(f"Switching API from {self.api}", end=" ")
         if self.api == "google":
             from geocoder import osm as api
-            self.api = "osm"
-        elif self.api == "osm":
-            from geocoder import arcgis as api
             self.api = "arcgis"
         elif self.api == "arcgis":
+            from geocoder import arcgis as api
+            self.api = "osm"
+        elif self.api == "osm":
             raise RuntimeError("Exhausted possible APIs!")
         else:
             raise RuntimeError
@@ -79,10 +79,11 @@ class _API:
     def geocode(self, addr):
         obj = self.coder(addr)
         if "limit" in obj.status.lower():
+            print()
             for s in range(3, 0, -1):
                 time.sleep(1)
-                print("\nQuery limit reached, waiting for API... {}".format(s), end="")
-
+                print("\rQuery limit reached, waiting for API... {}".format(s), end="")
+            print()
             obj = self.coder(addr)
         if "limit" in obj.status.lower():
             print("\nQuery limit reached with geocoder API. Switching!".format())
@@ -120,7 +121,7 @@ class PlaceType(abc.ABC):
                           str(self.address.strip()),
                           str(self.x),
                           str(self.y),
-                          str(self.found.strip()))) + "\n"
+                          str(self.found).strip())) + "\n"
 
     @abc.abstractmethod
     def reparse(self):
