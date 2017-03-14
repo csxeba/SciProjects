@@ -79,7 +79,7 @@ def extract_dj_number(xlws: worksheet.Worksheet, wbname=None):
         strlst += strz
 
     newstrlst = []
-    for nm in djnums:
+    for nm in djns:
         newstrlst += [s.replace(nm, " ").replace("  ", " ").replace("  ", "").strip()
                       for s in strlst]
 
@@ -108,9 +108,10 @@ if __name__ == '__main__':
         chain += "STRINGZ: " + ", ".join(strs) + "\n"
         chain += "DJ_NUMZ: " + ", ".join((str(n) for n in djn)) + "\n"
         chain += "DJ_NUMS: " + ", ".join(djs) + "\n"
+        chain += "DJ_ORIG: " + ", ".join((dj[n, "név"] for n in djn)) + "\n"
+        chain += "DJ_DIST: " + ", ".join(str(strsim(trflnm, dj[n, "név"])) for n in djn) + "\n"
         chain += "-" * 50 + "\n"
     nice = (str("{}: {}".format(*it)) for it in sorted(numz.items(), key=lambda t: t[0]))
     print("DJns found:\n", "\n".join(nice))
     with open("../sum.txt", "w") as handle:
         handle.write(chain)
-

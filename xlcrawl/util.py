@@ -16,8 +16,10 @@ class DJ:
                     line.append(cell.value)
             self.gutter.append(line)
 
-    def __getitem__(self, item, feature=None):
-        if feature is None:
+    def __getitem__(self, item):
+        if isinstance(item, tuple):
+            item, feature = item
+        else:
             return self.gutter[item]
         trdct = {"név": 0, "munkaut": 1}
         return self.gutter[item][trdct[feature]]
