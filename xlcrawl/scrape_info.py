@@ -103,14 +103,18 @@ if __name__ == '__main__':
                   .strip())
         for n in djn:
             numz[n].append(trflnm)
-        chain += "-" * 50 + "\n"
-        chain += flnm + "\n"
-        chain += "STRINGZ: " + ", ".join(strs) + "\n"
-        chain += "DJ_NUMZ: " + ", ".join((str(n) for n in djn)) + "\n"
-        chain += "DJ_NUMS: " + ", ".join(djs) + "\n"
-        chain += "DJ_ORIG: " + ", ".join((dj[n, "név"] for n in djn)) + "\n"
-        chain += "DJ_DIST: " + ", ".join(str(strsim(trflnm, dj[n, "név"])) for n in djn) + "\n"
-        chain += "-" * 50 + "\n"
+        chain += "\n".join((
+            "-" * 50,
+            flnm,
+            "STRINGZ: " + ", ".join(strs),
+            "DJ_NUMZ: " + ", ".join((str(n) for n in djn)),
+            "DJ_NUMS: " + ", ".join(djs),
+            "DJ_ORIG: " + ", ".join((dj.djname(n) for n in djn)),
+            "DJ_DIST: " + ", ".join(str(strsim(trflnm, dj.djname(n))) for n in djn),
+            "MU_ORIG: " + ", ".join(str(dj.tomu(n)) for n in djn),
+            "MU_NAME: " + ", ".join(str(dj.navsziname(n)) for n in djn),
+            "MU_DIST: " + ", ".join(str(strsim(trflnm, dj.navsziname(n))) for n in djn),
+            "-" * 50))
     nice = (str("{}: {}".format(*it)) for it in sorted(numz.items(), key=lambda t: t[0]))
     print("DJns found:\n", "\n".join(nice))
     with open("../sum.txt", "w") as handle:
