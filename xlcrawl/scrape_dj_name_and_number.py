@@ -1,7 +1,7 @@
 import os
-from collections import defaultdict
 from difflib import SequenceMatcher
 
+import numpy as np
 from openpyxl.worksheet import Worksheet
 
 from SciProjects.xlcrawl import project_root
@@ -9,14 +9,12 @@ from SciProjects.xlcrawl.util import DJ, iter_flz
 
 os.chdir(project_root + "ALLXLFLZ/")
 
-dj = DJ(project_root + "Díjjegyzék.xlsx")
-
 
 def strsim(str1, str2):
     return SequenceMatcher(None, str1, str2).ratio()
 
 
-def extract_djname_easy(xlws: Worksheet):
+def extract_djnum_easy(xlws: Worksheet):
     for cell in next(xlws.columns):
         cv = str(cell.value).lower()
         if "díjjegyzék száma:" in cv:
@@ -31,144 +29,100 @@ def extract_djname_easy(xlws: Worksheet):
                 return None
 
 
-def extract_djname_methodnumber_akkr(xlws: Worksheet, wbname=None):
+def split_string(s):
 
-    def try1(val, sep):
-        return reparse_djname(val.split(sep))
-
-    def tryall(val, seps):
+    def split_string_along_separators(val, seps):
         sepped = []
-        for sp in seps:
-            sepped += val.split(sp)
-        return reparse(list(set(sepped)))
+        for character in seps:
+            sepped += val.split(character)
+        return sepped
 
-    def cell_extraction_logic():
-        djname = None
-        methodnum = None
-        akkr = None
-        found = False
-        successive_empties = 0
-        interesting_finds = 0
+    candstrings = []
+    separators = [".", ",", "-", "_"]
+    for sp in separators:
+        candstrings += split_string_along_separators(s, sp)
+    candstrings = list(set((cnd for cnd in candstrings)))
+    numbers = []
+    for i in range(len(candstrings)):
+        cand = candstrings.pop(0)
+        for sp in separators + ["  ", "  "]:
+            cand = cand.replace(sp, " ")
+        cand = cand.strip()
+        if cand.isdigit():
+            numbers.append(int(cand))
+        else:
+            candstrings.append(cand)
+    return candstrings, numbers
 
-        for cell in next(xlws.columns):
-            if not found and str(cell.value) == "Díjjegyzék számítás":
-                found = True
-                continue
-            if not found:
-                continue
 
-            if cell.value is None:
-                successive_empties += 1
-                if successive_empties > 3:
-                    break
-                else:
-                    continue
+def infer_djnum_from_string(string, flnm):
 
-            if not interesting_finds:
-                djname = cell.value
-            elif interesting_finds == 1:
-                methodnum = reparse_methodnum(cell.value)
-            elif interesting_finds == 2:
-                v = str(cell.value).lower()
-                if "akkred" in v:
-                    akkr = "nem" in v
-            if successive_empties > 3 or interesting_finds > 2:
-                break
+    dj = DJ(project_root + "Díjjegyzék.xlsx")
+    candidates = split_string(string)[0] + split_string(flnm)[0]
+    refnumbers, refnames = zip(*sorted(dj.djnames.items(), key=lambda x: x[0]))
+    ps = np.array([[strsim(rname, cnd) for cnd in candidates] for rname in refnames])
+    refarg, candarg = np.unravel_index(ps.argmax(), ps.shape)
+    return candidates[candarg], refnames[refarg], refnumbers[refarg], ps[refarg, candarg]
 
-            interesting_finds += 1
-            successive_empties = 0
 
-        return djname, methodnum, akkr
-
-    def reparse_djname(lst):
-        foundnum, foundnums, foundstring = [], [], []
-        for d in lst:
-            d = (d
-                 .replace(".", " ")
-                 .replace(",", " ")
-                 .replace("-", " ")
-                 .replace("_", " ")
-                 .replace("  ", " ")
-                 .replace("  ", " ")
-                 .strip())
-            try:
-                foundnum.append(int(d))
-            except ValueError or AttributeError:
-                foundstring.append(d)
-            else:
-                foundnums.append(d)
-        return foundnum, foundnums, foundstring
+def extract_info(xlws: Worksheet, flnm):
 
     def reparse_methodnum(cellval):
-        mn = None
-        v = str(cellval).lower()
-        if any(x in v for x in ("módszer", "nav", "navszi", "nav szi")):
-            mn = (v
-                         .replace("navszi", " ")
-                         .replace("nav szi", " ")
-                         .replace(".", " ")
-                         .replace("mérési módszer", " ")
-                         .replace(":", " ")
-                         .replace(" ", ""))
-            try:
-                mn = int(mn)
-            except ValueError:
-                print("Can't INTify", mn)
-        return mn
+        numbers = split_string(str(cellval))[1]
+        numbers = list(set(numbers))
+        if len(numbers) > 1:
+            raise RuntimeError("Multiple candide method numbers @ {}:\n{}"
+                               .format(flnm, ", ".join(numbers)))
+        return numbers
 
-    def extract_djnumber_candidates():
-        djnumber, djn_asstr, candstrings = [], [], []
-        for sp in (".", ",", "-", "_"):
-            if djname is not None:
-                djnum, djnums, strz = try1(djname, sp)
-                djnumber += djnum
-                djn_asstr += djnums
-                candstrings += strz
-                djnum, djnums, strz = tryall(djname, sp)
-                djnumber += djnum
-                djn_asstr += djnums
-                candstrings += strz
+    djname = None
+    methodnum = None
+    akkr = None
+    found = False
 
-            djnum, djnums, strz = try1(wbname[:-5], sp)
-            djnumber += djnum
-            djn_asstr += djnums
-            candstrings += strz
-            djnum, djnums, strz = tryall(wbname[:-5], sp)
-            djnumber += djnum
-            djn_asstr += djnums
-            candstrings += strz
-        return djnumber, djn_asstr, candstrings
+    for i, cell in enumerate(next(xlws.columns)):
+        if not found and str(cell.value) == "Díjjegyzék számítás":
+            found = True
+            continue
+        if not found:
+            continue
 
-    djname, methodnum, akkr_status = cell_extraction_logic()
-    djn, djns, strlst = tuple(map(sorted, map(list, map(set, (extract_djnumber_candidates())))))
+        if cell.value is None:
+            continue
 
-    newstrlst = []
-    for nm in djns:
-        newstrlst += [s.replace(nm, " ").replace("  ", " ").replace("  ", "").strip()
-                      for s in strlst]
+        if not djname:
+            djname = cell.value
+        elif djname and not methodnum:
+            methodnum = reparse_methodnum(cell.value)
+        elif methodnum and not akkr:
+            v = str(cell.value).lower()
+            if "akkred" in v:
+                if v[:3] == "akk":
+                    akkr = True
+                elif v[:3] == "nem":
+                    akkr = False
+                else:
+                    raise RuntimeError("Akkr is faulty in " + flnm)
+            break
+        if i >= 10:
+            break
 
-    return djn, djns, strlst
+    return djname, methodnum, akkr
 
 
 def main():
-    chain = ""
-    numz = defaultdict(list)
-    for flnm, ws in iter_flz("."):
-        djnumber = extract_djname_easy(ws)
-        djn, djs, strs = extract_djname_methodnumber_akkr(ws, flnm)
-        trflnm = (flnm[:-5]
-                  .replace("NAV SZI", "")
-                  .replace("NAVSZI", "")
-                  .strip())
-        for n in djn:
-            numz[n].append(trflnm)
-        bc, br, p = infer_name(strs + [trflnm])
-        addths = "\t".join((flnm,
-                            "{" + "}, {".join(strs + [trflnm]) + "}",
-                            bc, br, "{:>.4f}".format(p),
-                           *[str(d) for d in dj.dj_name_to_nums(br)]))
-        chain += addths + "\n"
-    # nice = (str("{}: {}".format(*it)) for it in sorted(numz.items(), key=lambda t: t[0]))
-    # print("DJns found:\n", "\n".join(nice))
-    with open("../sum.csv", "w") as handle:
+    lndir = len(os.listdir("."))
+    strln = len(str(lndir))
+    chain = "FILE\tFOUND\tDJN_READ\tMN_READ\tAKKR\tDJN_INFERRED\tDJNAME_INF\tP\n"
+    for i, (flnm, ws) in enumerate(iter_flz("."), start=1):
+        print("\rProgress: {:>{w}}/{} @ {}".format(i, lndir, flnm, w=strln), end="")
+        djname, mn, ak = extract_info(ws, flnm)
+        djnum = extract_djnum_easy(ws)
+        cndnm, rfnm, rno, p = infer_djnum_from_string(djname, flnm)
+        chain += "\t".join(map(str, (flnm, djname, djnum, mn, ak, rno, rfnm, p))) + "\n"
+
+    with open(project_root + "djname.csv", "w") as handle:
         handle.write(chain)
+
+if __name__ == '__main__':
+    main()
