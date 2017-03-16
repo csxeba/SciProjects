@@ -4,26 +4,21 @@ import openpyxl as xl
 
 class DJ:
     def __init__(self, xlpath):
-        self.bydj = []
-        self.bymu = defaultdict(list)
+        self.djnames = {}
+        self.munumbers = {}
+        self.munames = {}
         djwb = xl.load_workbook(xlpath)
         for row in djwb.worksheets[0]:
-            iwant = (2, 5)
-            line = []
-            for i, cell in enumerate(row):
-                if i == 0:
-                    continue
-                if i in iwant:
-                    line.append(cell.value)
-            self.bydj.append(line)
+            djnum = row[1].value
+            if not isinstance(djnum, int):
+                continue
+            self.djnames[djnum] = row[2].value
+            self.munumbers[djnum] = row[5].value
         for row in djwb.worksheets[1]:
-            self.bymu[row[0].value] = row[1].value
+            self.munames[row[0].value] = row[1].value
 
-    def djname(self, item):
-        return self.bydj[item][0]
+    def dj_name_to_nums(self, name):
+        return [k for k, v in sorted(self.djnames.items()) if name == v]
 
-    def tomu(self, item):
-        return self.bydj[item][1]
-
-    def navsziname(self, item):
-        return self.bymu[item]
+    def mu_to_dj(self, mu):
+        return [k for k, v in sorted(self.munumbers.items()) if v == mu]

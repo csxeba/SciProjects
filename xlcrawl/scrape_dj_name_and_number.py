@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 from difflib import SequenceMatcher
 
+import numpy as np
 import openpyxl as xl
 from openpyxl import worksheet
 
@@ -92,10 +93,23 @@ def iter_flz(root):
         yield xlnm, xlwb.worksheets[0]
 
 
+def infer_name(candidates):
+    scores = []
+    for cnd in candidates:
+        scores.append([strsim(cnd, r) for r in dj.djnames.values()])
+    scores = np.array(scores)
+    arg = np.unravel_index(np.argmax(scores), scores.shape)
+    bestcand = candidates[arg[0]]
+    bestref = dj.djnames[arg[1]]
+    return bestcand, bestref, scores[arg]
+
 if __name__ == '__main__':
-    chain = ""
+    chain = "FILE\tALLCND\tBESTC\tBESTR\tpR\tDJNCAND->\n"
     numz = defaultdict(list)
-    for flnm, ws in iter_flz("."):
+    ln = len(os.listdir("."))
+    strln = len(str(ln))
+    for i, (flnm, ws) in enumerate(iter_flz("."), start=1):
+        print("\rDoing file {:>{w}}/{}".format(i, ln, w=strln), end="")
         djn, djs, strs = extract_dj_number(ws, flnm)
         trflnm = (flnm[:-5]
                   .replace("NAV SZI", "")
@@ -103,19 +117,13 @@ if __name__ == '__main__':
                   .strip())
         for n in djn:
             numz[n].append(trflnm)
-        chain += "\n".join((
-            "-" * 50,
-            flnm,
-            "STRINGZ: " + ", ".join(strs),
-            "DJ_NUMZ: " + ", ".join((str(n) for n in djn)),
-            "DJ_NUMS: " + ", ".join(djs),
-            "DJ_ORIG: " + ", ".join((dj.djname(n) for n in djn)),
-            "DJ_DIST: " + ", ".join(str(strsim(trflnm, dj.djname(n))) for n in djn),
-            "MU_ORIG: " + ", ".join(str(dj.tomu(n)) for n in djn),
-            "MU_NAME: " + ", ".join(str(dj.navsziname(n)) for n in djn),
-            "MU_DIST: " + ", ".join(str(strsim(trflnm, dj.navsziname(n))) for n in djn),
-            "-" * 50))
-    nice = (str("{}: {}".format(*it)) for it in sorted(numz.items(), key=lambda t: t[0]))
-    print("DJns found:\n", "\n".join(nice))
-    with open("../sum.txt", "w") as handle:
+        bc, br, p = infer_name(strs + [trflnm])
+        addths = "\t".join((flnm,
+                            "{" + "}, {".join(strs + [trflnm]) + "}",
+                            bc, br, "{:>.4f}".format(p),
+                           *[str(d) for d in dj.dj_name_to_nums(br)]))
+        chain += addths + "\n"
+    # nice = (str("{}: {}".format(*it)) for it in sorted(numz.items(), key=lambda t: t[0]))
+    # print("DJns found:\n", "\n".join(nice))
+    with open("../sum.csv", "w") as handle:
         handle.write(chain)
