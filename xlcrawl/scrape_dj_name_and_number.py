@@ -127,3 +127,4 @@ if __name__ == '__main__':
     # print("DJns found:\n", "\n".join(nice))
     with open("../sum.csv", "w") as handle:
         handle.write(chain)
+# Kotkotkooooootkoooooooooooootkoooooooootkotkotkotkotkotkotkotkotkot
