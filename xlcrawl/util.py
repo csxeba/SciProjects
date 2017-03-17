@@ -37,8 +37,8 @@ class DJ:
                 continue
             self.djnames[djnum] = row[2].value
             self.munumbers[djnum] = row[5].value
-        for row in djwb.worksheets[1]:
-            self.munames[row[0].value] = row[1].value
+        # for row in djwb.worksheets[1]:
+        #     self.munames[row[0].value] = row[1].value
 
     def dj_name_to_nums(self, name):
         return [k for k, v in sorted(self.djnames.items()) if name == v]
