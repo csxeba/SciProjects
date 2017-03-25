@@ -74,7 +74,7 @@ def extract_ws(ws: Worksheet, flnm=None):
 
 
 def main():
-    chain = "FILE\tMERNOK\tTECHNIKUS\n"
+    chain = "FILE\tMTIME\tTTIME\tMNAME\tTNAME\n"
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
     for i, (flnm, ws) in enumerate(iter_flz("."), start=1):

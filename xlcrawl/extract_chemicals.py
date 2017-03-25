@@ -6,8 +6,6 @@ from openpyxl.worksheet import Worksheet
 
 os.chdir(project_root + "/ALLXLFLZ/")
 
-shouldbe = ["Vegyszer neve", "CAS száma", "Tisztasága", "Szükséges mennyiség", "Cikkszám"]
-
 
 class RowExtractor:
 
@@ -50,6 +48,8 @@ class RowExtractor:
 
 def locate_table_header(ws: Worksheet, flnm):
 
+    shouldbe = ["Vegyszer neve", "CAS száma", "Tisztasága", "Szükséges mennyiség", "Cikkszám"]
+
     def valid_header(got):
         if got is None:
             return False
@@ -80,23 +80,23 @@ def extract_matrix(ws: Worksheet, extractor, startrow, startcol, flnm):
     data = []
     ran = 0
     while 1:
+        if ran > 50:
+            raise RuntimeError("Overrun in {}.\nExiting!".format(flnm))
         col0 = str(ws.cell(row=rown, column=1).value)
         row = extractor(ws, rown, startcol)
         if "eszközök, műszerek" in col0:
             break
-        if row is None:
-            ran += 1
-            rown += 1
-            continue
-        data.append([flnm] + row)
-        if ran > 50:
-            raise RuntimeError("Overrun in {}.\nExiting!".format(flnm))
         ran += 1
         rown += 1
+        if row is None:
+            continue
+        data.append([flnm] + row)
     return data
 
 
-def main():
+def assemble_chemtable():
+    shouldbe = ["Vegyszer neve", "CAS száma", "Tisztasága", "Szükséges mennyiség", "Cikkszám"]
+
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
     chain = "\t".join(["FILE"] + shouldbe) + "\n"
@@ -114,9 +114,5 @@ def main():
         chain += "\n".join("\t".join(line) for line in data) + "\n"
     print()
 
-    with open(project_root + "vegyszerek.csv", "w") as handle:
+    with open(project_root + "chem.csv", "w") as handle:
         handle.write(chain.replace("None", "-"))
-
-
-if __name__ == '__main__':
-    main()

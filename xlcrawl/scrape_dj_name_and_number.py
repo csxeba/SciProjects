@@ -1,17 +1,14 @@
 import os
-from difflib import SequenceMatcher
 
 import numpy as np
 from openpyxl.worksheet import Worksheet
 
 from SciProjects.xlcrawl import project_root
-from SciProjects.xlcrawl.util import DJ, iter_flz
+from SciProjects.xlcrawl.util import (
+    DJ, iter_flz, walk_column_until, strsim, striters
+)
 
 os.chdir(project_root + "ALLXLFLZ/")
-
-
-def strsim(str1, str2):
-    return SequenceMatcher(None, str1, str2).ratio()
 
 
 def extract_djnum_easy(xlws: Worksheet):
@@ -61,8 +58,49 @@ def infer_djnum_from_string(string, flnm):
     candidates = split_string(string)[0] + split_string(flnm)[0]
     refnumbers, refnames = zip(*sorted(dj.djnames.items(), key=lambda x: x[0]))
     ps = np.array([[strsim(rname, cnd) for cnd in candidates] for rname in refnames])
-    refarg, candarg = np.unravel_index(ps.argmax(), ps.shape)
-    return candidates[candarg], refnames[refarg], refnumbers[refarg], ps[refarg, candarg]
+    args = np.argwhere(np.greater(ps, 0.9))
+    refarg, candarg = refnumbers[args[:, 0]], candidates[args[:, 1]]
+    return candidates[candarg], refnames[refarg], refnumbers[refarg], ps[args]
+
+
+def walk_columns(xlws: Worksheet, flnm):
+    for colno in range(1, 11):
+        rowno = walk_column_until(xlws, colno, "Díjjegyzék számítás", limit=15)
+        if rowno is not None:
+            header_start = [rowno, colno]
+            break
+    else:
+        raise RuntimeError("'Díjjegyzék számítás' not found in " + flnm)
+
+    rown, coln = header_start
+    djname = xlws.cell(row=rown+1, column=coln).value
+    cells = tuple(xlws.iter_cols(min_col=coln, max_col=coln,
+                                 min_row=rown+2, max_row=rown+12))[0]
+    mname, akkr = None, None
+    for cell in cells:
+        if cell.value is None:
+            continue
+        cv = str(cell.value)
+        if akkr is None and \
+                ("Mérési módszer:" == cv[:15] or
+                 "NAV SZI" in cv or "NAVSZI" in cv):
+            mname = cv
+        if mname is None and \
+                ("akkred" in cv):
+            akkr = cv
+        if mname is not None and akkr is not None:
+            break
+
+    if not mname and "\n" in djname:
+        print(" !!! FOUND <newline> @", flnm)
+        sentences = djname.split("\n")
+        for i, snt in sentences:
+            if "módszer" in snt.lower():
+                djname = " ".join(sentences[:i])
+                mname = " ".join(sentences[i:])
+                break
+
+    return striters((djname, mname, akkr))
 
 
 def extract_info(xlws: Worksheet, flnm):
