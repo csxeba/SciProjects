@@ -15,14 +15,32 @@ def striters(*iterables):
     out = []
     for iterable in iterables:
         itt = type(iterable)
-        out.append(itt(map(str, map(lambda d: "-" if d is None else d))))
+        out.append(itt(map(str, map(lambda d: "-" if d is None else d, iterable))))
     return out if len(out) > 1 else out[0]
 
 
-def iter_flz(root):
-    for xlnm in (flnm for flnm in sorted(os.listdir(root)) if flnm[-5:] == ".xlsx"):
-        xlwb = xl.load_workbook(xlnm)
-        yield xlnm, xlwb.worksheets[0]
+def valid(ws: Worksheet):
+    return "melléklet" in "".join((str(ws["A1"].value), str(ws["A2"].value))).lower()
+
+
+def iter_flz(dirroot):
+    os.chdir(dirroot)
+    paths = []
+    print("Gathering information...", end=" ")
+    for root, dirz, flz in os.walk("."):
+        paths += [os.path.join(root, fl) for fl in flz if fl[-4:] == "xlsx" and fl[0] != "~"]
+    print("Done!")
+    print("Reading XL files...")
+    N = len(paths)
+    strlen = len(str(N))
+    for i, xlfl in enumerate(sorted(paths), start=1):
+        print("{:>{w}}/{} - {}".format(i, N, xlfl, w=strlen))
+        os.chdir(dirroot)
+        ws = xl.load_workbook(xlfl).worksheets[0]
+        if not valid(ws):
+            print(" !!! iter_flz: skipping invalid file:", xlfl)
+            continue
+        yield ws, xlfl
 
 
 def walk_column_until(ws: Worksheet, coln: int, strval: str, limit=30, limitstr=""):
@@ -89,7 +107,6 @@ def extract_inventory_numbers(raw_field: str):
         newfield = newfield.replace(",,", ",")
     while ";;" in newfield:
         newfield = newfield.replace(";;", ",")
-    print(raw_field + ": " + ", ".join(candidates))
     return candidates, newfield
 
 
@@ -107,9 +124,9 @@ def trimstr(ugly):
 class DJ:
 
     def __init__(self, xlpath):
-        self.djnames = {"": ""}
-        self.munumbers = {"": ""}
-        self.munames = {"": ""}
+        self.djnames = {}
+        self.munumbers = {}
+        self.munames = {}
         djwb = xl.load_workbook(xlpath)
         for row in djwb.worksheets[0]:
             djnum = row[1].value

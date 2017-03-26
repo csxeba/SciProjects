@@ -4,14 +4,13 @@ from SciProjects.xlcrawl import project_root
 from SciProjects.xlcrawl.util import walk_column_until, iter_flz
 from openpyxl.worksheet import Worksheet
 
-os.chdir(project_root + "/ALLXLFLZ/")
-
 
 def locate_table(ws: Worksheet, flnm):
     myrow = walk_column_until(ws, 0, "szükséges műszer", limit=120)
     tablerow = None
     if myrow is None:
-        raise RuntimeError("No <szükséges műszer> header in {}".format(flnm))
+        print("No <szükséges műszer> header in {}".format(flnm))
+        return None
     coln = 0
     while tablerow is None:
         if coln >= 20:
@@ -42,6 +41,7 @@ def extract_matrix(ws: Worksheet, row, col, flnm):
     data = []
     ran = 0
     limit = 50
+    first_empty_row = 0
     while ran < limit:
         if ran >= limit:
             if row:
@@ -51,16 +51,22 @@ def extract_matrix(ws: Worksheet, row, col, flnm):
         if "ráosztott költség" in col0:
             break
         if not row:
+            if not first_empty_row and ran > 1:
+                first_empty_row = len(data)
             ran += 1
             rown += 1
             continue
-        data.append([flnm] + row)
+        data.append(row)
         ran += 1
         rown += 1
+    if len(data) == 0:
+        data = [[""]*2]
     return data
 
 
 def main():
+    os.chdir(project_root + "/ALLXLFLZ/")
+
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
     chain = "FILE\tINSTRUMENT\tUSAGE\tOTHER_INFO->\n"

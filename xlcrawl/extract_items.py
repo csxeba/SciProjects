@@ -4,14 +4,13 @@ from SciProjects.xlcrawl import project_root
 from SciProjects.xlcrawl.util import walk_column_until, iter_flz
 from openpyxl.worksheet import Worksheet
 
-os.chdir(project_root + "/ALLXLFLZ/")
-
 
 def locate_table(ws: Worksheet, flnm):
     myrow = walk_column_until(ws, 0, "eszközök, műszerek", limit=50)
     tablerow = None
     if myrow is None:
-        raise RuntimeError("No <eszköz, műszer> header in {}".format(flnm))
+        print("No <eszköz, műszer> header in {}".format(flnm))
+        return None
     coln = 0
     while tablerow is None:
         if coln >= 20:
@@ -41,24 +40,33 @@ def extract_matrix(ws: Worksheet, row, col, flnm):
     rown = row
     data = []
     ran = 0
+    first_empty_row = 0
+    lines_found = 0
     while 1:
         if ran > 50:
-            raise RuntimeError("Overrun in {}.\nExiting!".format(flnm))
+            print("Overrun in {}.\nClipping to {}!".format(flnm, first_empty_row))
+            return data[:first_empty_row]
         col0 = str(ws.cell(row=rown, column=1).value)
         row = extract_row(ws, rown, col)
         if "szükséges műszer" in col0:
             break
         if not row:
+            if rown > 1 and not first_empty_row:
+                first_empty_row = lines_found
             ran += 1
             rown += 1
             continue
-        data.append([flnm] + row)
+        data.append(row)
+        lines_found += 1
         ran += 1
         rown += 1
+    if len(data) == 0:
+        data = [[""]*2]
     return data
 
 
-def main():
+def assemble_item_data(output=None):
+    os.chdir(project_root + "ALLXLFLZ")
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
     chain = "FILE\tNAME\tQUANT\tOTHER_INFO->"

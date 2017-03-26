@@ -4,8 +4,6 @@ from SciProjects.xlcrawl import project_root
 from SciProjects.xlcrawl.util import walk_column_until, iter_flz
 from openpyxl.worksheet import Worksheet
 
-os.chdir(project_root + "/ALLXLFLZ/")
-
 
 class RowExtractor:
 
@@ -32,16 +30,21 @@ class RowExtractor:
             coln += 1
         if all(e is None for e in data):
             return
+        if len(data) == 0:
+            data = [[""]*5]
         return data
 
     def separate_evenodd(self, data):
         odd = data[::2]
         even = data[1::2]
         updated = []
-        for i, (left, right) in enumerate(zip(odd, even)):
+        for i, (left, right) in enumerate(zip(odd, even), start=1):
             if (left is not None) and (right is not None):
-                msg = "JAM in {}:\n{}\n{}".format(self.flnm, left, right)
-                raise RuntimeError(msg)
+                # if i == len(data) // 2:
+                #     continue
+                msg = ("CHEM-JAM in {}:\n{} <- this stays\n{}"
+                       .format(self.flnm, left, right))
+                print(msg)
             updated.append(left if left != "None" else right)
         return updated
 
@@ -68,7 +71,7 @@ def locate_table_header(ws: Worksheet, flnm):
         extractor = RowExtractor(evenodd=True, flnm=flnm)
         header = extractor(ws, myrow, coln)
         if not valid_header(header):
-            msg = "Invalid table header in " + flnm + "\n"
+            msg = "CHEM: Invalid table header in " + flnm + "\n"
             msg += ", ".join(header) + " !=\n"
             msg += ", ".join(shouldbe)
             raise RuntimeError(msg)
@@ -79,9 +82,12 @@ def extract_matrix(ws: Worksheet, extractor, startrow, startcol, flnm):
     rown = startrow
     data = []
     ran = 0
+    first_empty_row = 0
+    lines_found = 0
     while 1:
         if ran > 50:
-            raise RuntimeError("Overrun in {}.\nExiting!".format(flnm))
+            print("CHEM: Overrun in {}.\nClipping back to {}!".format(flnm, first_empty_row))
+            return data[:first_empty_row]
         col0 = str(ws.cell(row=rown, column=1).value)
         row = extractor(ws, rown, startcol)
         if "eszközök, műszerek" in col0:
@@ -89,12 +95,17 @@ def extract_matrix(ws: Worksheet, extractor, startrow, startcol, flnm):
         ran += 1
         rown += 1
         if row is None:
+            if not lines_found and ran > 1:
+                first_empty_row = lines_found
             continue
-        data.append([flnm] + row)
+        data.append(row)
+        lines_found += 1
     return data
 
 
 def assemble_chemtable():
+    os.chdir(project_root + "/ALLXLFLZ/")
+
     shouldbe = ["Vegyszer neve", "CAS száma", "Tisztasága", "Szükséges mennyiség", "Cikkszám"]
 
     lndir = len(os.listdir("."))

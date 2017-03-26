@@ -8,8 +8,6 @@ from SciProjects.xlcrawl.util import (
     DJ, iter_flz, walk_column_until, strsim, striters
 )
 
-os.chdir(project_root + "ALLXLFLZ/")
-
 
 def extract_djnum_easy(xlws: Worksheet):
     for cell in next(xlws.columns):
@@ -55,16 +53,18 @@ def split_string(s):
 def infer_djnum_from_string(string, flnm):
 
     dj = DJ(project_root + "Díjjegyzék.xlsx")
-    candidates = split_string(string)[0] + split_string(flnm)[0]
+    candidates = np.array(split_string(string)[0] + split_string(flnm)[0])
     refnumbers, refnames = zip(*sorted(dj.djnames.items(), key=lambda x: x[0]))
+    refnumbers, refnames = tuple(map(np.array, (refnumbers, refnames)))
     ps = np.array([[strsim(rname, cnd) for cnd in candidates] for rname in refnames])
     args = np.argwhere(np.greater(ps, 0.9))
-    refarg, candarg = refnumbers[args[:, 0]], candidates[args[:, 1]]
-    return candidates[candarg], refnames[refarg], refnumbers[refarg], ps[args]
+    args = args[np.argsort(ps[args[:, 0], args[:, 1]])[::-1]]
+    refarg, candarg = args.T
+    return candidates[candarg], refnames[refarg], refnumbers[refarg], ps[refarg, candarg]
 
 
 def walk_columns(xlws: Worksheet, flnm):
-    for colno in range(1, 11):
+    for colno in range(0, 10):
         rowno = walk_column_until(xlws, colno, "Díjjegyzék számítás", limit=15)
         if rowno is not None:
             header_start = [rowno, colno]
@@ -73,6 +73,7 @@ def walk_columns(xlws: Worksheet, flnm):
         raise RuntimeError("'Díjjegyzék számítás' not found in " + flnm)
 
     rown, coln = header_start
+    coln += 1
     djname = xlws.cell(row=rown+1, column=coln).value
     cells = tuple(xlws.iter_cols(min_col=coln, max_col=coln,
                                  min_row=rown+2, max_row=rown+12))[0]
@@ -92,9 +93,9 @@ def walk_columns(xlws: Worksheet, flnm):
             break
 
     if not mname and "\n" in djname:
-        print(" !!! FOUND <newline> @", flnm)
+        print(" !!! DJSCRAPE: found newline @", flnm)
         sentences = djname.split("\n")
-        for i, snt in sentences:
+        for i, snt in enumerate(sentences):
             if "módszer" in snt.lower():
                 djname = " ".join(sentences[:i])
                 mname = " ".join(sentences[i:])
@@ -149,6 +150,7 @@ def extract_info(xlws: Worksheet, flnm):
 
 
 def main():
+    os.chdir(project_root + "ALLXLFLZ")
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
     chain = "FILE\tFOUND\tDJN_READ\tMN_READ\tAKKR\tDJN_INFERRED\tDJNAME_INF\tP\n"

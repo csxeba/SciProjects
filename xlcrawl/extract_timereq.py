@@ -5,8 +5,6 @@ from openpyxl.worksheet import Worksheet
 from SciProjects.xlcrawl import project_root
 from SciProjects.xlcrawl.util import iter_flz
 
-os.chdir(project_root + "ALLXLFLZ")
-
 
 def extract_ws(ws: Worksheet, flnm=None):
 
@@ -64,16 +62,31 @@ def extract_ws(ws: Worksheet, flnm=None):
         slc = s[start:stop].replace("\n", " ").strip()
         return slc
 
+    def handle_multiline(s, findstring):
+        if "\n" in str(s):
+            for ss in s.split("\n"):
+                if findstring in ss:
+                    return ss
+            else:
+                return s[0]
+        else:
+            return s
+
     start = determine_starting_row()
     strings = extract_strings(start)
     if strings is None:
-        raise RuntimeError("No valid string in {}".format(flnm))
+        print("TIMEREQ: No valid string in {}".format(flnm))
+        return [""]*4
+    for i in range(len(strings)):
+        strings[i] = handle_multiline(strings[i], ("szakreferens" if i else " referens"))
     timeinfos = list(map(extract_time_info_from_string, strings))
     nameinfos = list(map(extract_names_from_string, strings))
     return timeinfos + nameinfos
 
 
 def main():
+    os.chdir(project_root + "ALLXLFLZ")
+
     chain = "FILE\tMTIME\tTTIME\tMNAME\tTNAME\n"
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
