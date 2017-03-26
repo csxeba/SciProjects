@@ -1,11 +1,13 @@
 import os
+import gzip
+import pickle
 
 import numpy as np
 import openpyxl as xl
-from openpyxl.worksheet import Worksheet
 
-from SciProjects.xlcrawl import project_root, templateroot
+from SciProjects.xlcrawl import project_root, templateroot, pickleroot
 from SciProjects.xlcrawl.util import extract_inventory_numbers, iter_flz
+from openpyxl.worksheet import Worksheet
 
 # vbhvcfrcd  bh jn -- Ezt a Cuni írta :)
 
@@ -62,6 +64,7 @@ class Table(NamelessAbstraction):
             self.reparse_data()
 
     def empty(self):
+        print("TABLE: empty", self.categ, "table!")
         self.data = [["-"] * (5 if self.categ == "chem" else 2)]
 
     def read_data(self, ws):
@@ -101,7 +104,7 @@ class Table(NamelessAbstraction):
                     qnt = line[1]
                 else:
                     qnt = ""
-                repline = ["/".join(cand), refname, qnt]
+                repline = ["/".join(cand), refname.strip(), qnt]
                 if self.categ == "inst":
                     repline.insert(2, "")
             rp.append(repline)
@@ -178,6 +181,7 @@ class Header(NamelessAbstraction):
         )
         djname, mname, akkr = walk_columns(ws, flnm)
         djnum = extract_djnum_easy(ws)
+        djdb = DJ(project_root + "Díjjegyzék.xlsx")
         if djnum is None:
             cands, rfnames, djnums, ps = infer_djnum_from_string(djname, flnm)
             for djnum in djnums:
@@ -188,9 +192,10 @@ class Header(NamelessAbstraction):
                     djnum = djnums[0]
                     djname = rfnames[0]
                 else:
-                    return [""]*4
-        djdb = DJ(project_root + "Díjjegyzék.xlsx")
-        mnum = djdb.munumbers[djnum]
+                    djnum = ""
+        else:
+            djname = djdb.djnames[djnum] if djnum else ""
+        mnum = djdb.munumbers[djnum] if djnum else ""
         mname = djname
         return [djnum, djname, mnum, mname]
 
@@ -223,6 +228,8 @@ class Method:
 
     def __init__(self, flpath, ws=None):
         path, flnm = _slicepath(flpath)
+        self.path = path
+        self.flnm = flnm
         if not ws:
             xlin = xl.load_workbook(flpath)
             self.ws = xlin.worksheets[0]
@@ -234,15 +241,27 @@ class Method:
         self.inst = Table(self.ws, path, flnm, "inst")
         self.item = Table(self.ws, path, flnm, "item")
 
+    @staticmethod
+    def load(flnm):
+        with gzip.open(pickleroot + flnm) as handle:
+            return pickle.load(handle)
+
     def sanity_check(self):
         return "Melléklet" in (self.ws["A1"].value, self.ws["A2"].value)
 
     def dump(self, newroot):
+        self.save()
         os.chdir(newroot)
         self.head.dump()
         self.chem.dump()
         self.item.dump()
         self.inst.dump()
+
+    def save(self, path=None):
+        if path is None:
+            path = pickleroot
+        with gzip.open(path + self.flnm[:-4]+"pkl.gz", "wb") as handle:
+            pickle.dump(self, handle)
 
 
 def cleanup(dstroot, force=False):
