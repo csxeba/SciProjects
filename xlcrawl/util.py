@@ -4,7 +4,7 @@ from difflib import SequenceMatcher
 import openpyxl as xl
 from openpyxl.worksheet import Worksheet
 
-from SciProjects.xlcrawl import project_root
+from SciProjects.xlcrawl import projectroot
 
 
 def strsim(str1, str2):
@@ -55,14 +55,6 @@ def walk_column_until(ws: Worksheet, coln: int, strval: str, limit=30, limitstr=
         if limitstr:
             if limitstr in cval:
                 return None
-
-
-def pull_data(tablename):
-    inflpath = project_root + tablename
-    lines = open(inflpath).read().split("\n")
-    for l in lines[1:]:
-        if l:
-            yield l.split("\t")
 
 
 def extract_inventory_numbers(raw_field: str):
@@ -142,3 +134,21 @@ class DJ:
 
     def mu_to_dj(self, mu):
         return [k for k, v in sorted(self.munumbers.items()) if v == mu]
+
+
+class Allomany:
+
+    def __init__(self, src=None):
+        handle = open(src if src is not None else projectroot + "allomany.csv")
+        dstream = (d.strip().split("\t")[:3] for d in handle)
+        self.data = {nev: (tasz, helyettes) for nev, tasz, helyettes in dstream}
+
+    def get(self, what, nev):
+        result = self.data.get(nev, ("", ""))
+        return result[int(what=="hely")]
+
+    def tasz(self, nev):
+        return self.get("tasz", nev)
+
+    def helyettes(self, nev):
+        return self.get("hely", nev)

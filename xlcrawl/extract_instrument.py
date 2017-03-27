@@ -1,6 +1,6 @@
 import os
 
-from SciProjects.xlcrawl import project_root
+from SciProjects.xlcrawl import projectroot
 from SciProjects.xlcrawl.util import walk_column_until, iter_flz
 from openpyxl.worksheet import Worksheet
 

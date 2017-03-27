@@ -3,7 +3,7 @@ import os
 import numpy as np
 from openpyxl.worksheet import Worksheet
 
-from SciProjects.xlcrawl import project_root
+from SciProjects.xlcrawl import projectroot
 from SciProjects.xlcrawl.util import (
     DJ, iter_flz, walk_column_until, strsim, striters
 )
@@ -52,7 +52,7 @@ def split_string(s):
 
 def infer_djnum_from_string(string, flnm):
 
-    dj = DJ(project_root + "Díjjegyzék.xlsx")
+    dj = DJ(projectroot + "Díjjegyzék.xlsx")
     candidates = np.array(split_string(string)[0] + split_string(flnm)[0])
     refnumbers, refnames = zip(*sorted(dj.djnames.items(), key=lambda x: x[0]))
     refnumbers, refnames = tuple(map(np.array, (refnumbers, refnames)))
@@ -74,7 +74,16 @@ def walk_columns(xlws: Worksheet, flnm):
 
     rown, coln = header_start
     coln += 1
-    djname = xlws.cell(row=rown+1, column=coln).value
+    offset = 1
+    limit = 5
+    while 1:
+        djname = xlws.cell(row=rown+offset, column=coln).value
+        offset += 1
+        if (djname is not None) or (offset >= limit):
+            break
+    if djname is None:
+        raise RuntimeError("DJSCRAPE: no valid djname in " + flnm)
+
     cells = tuple(xlws.iter_cols(min_col=coln, max_col=coln,
                                  min_row=rown+2, max_row=rown+12))[0]
     mname, akkr = None, None

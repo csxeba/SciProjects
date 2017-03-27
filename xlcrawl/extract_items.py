@@ -1,6 +1,6 @@
 import os
 
-from SciProjects.xlcrawl import project_root
+from SciProjects.xlcrawl import projectroot
 from SciProjects.xlcrawl.util import walk_column_until, iter_flz
 from openpyxl.worksheet import Worksheet
 
@@ -66,7 +66,7 @@ def extract_matrix(ws: Worksheet, row, col, flnm):
 
 
 def assemble_item_data(output=None):
-    os.chdir(project_root + "ALLXLFLZ")
+    os.chdir(projectroot + "ALLXLFLZ")
     lndir = len(os.listdir("."))
     strln = len(str(lndir))
     chain = "FILE\tNAME\tQUANT\tOTHER_INFO->"
@@ -79,8 +79,8 @@ def assemble_item_data(output=None):
             continue
         chain += "\n".join("\t".join(line) for line in data) + "\n"
 
-    with open(project_root + "items.csv", "w") as handle:
+    with open(output, "w") as handle:
         handle.write(chain.replace("None", "-"))
 
 if __name__ == '__main__':
-    main()
+    assemble_item_data()

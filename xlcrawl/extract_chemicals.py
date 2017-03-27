@@ -1,6 +1,6 @@
 import os
 
-from SciProjects.xlcrawl import project_root
+from SciProjects.xlcrawl import projectroot
 from SciProjects.xlcrawl.util import walk_column_until, iter_flz
 from openpyxl.worksheet import Worksheet
 
@@ -71,10 +71,8 @@ def locate_table_header(ws: Worksheet, flnm):
         extractor = RowExtractor(evenodd=True, flnm=flnm)
         header = extractor(ws, myrow, coln)
         if not valid_header(header):
-            msg = "CHEM: Invalid table header in " + flnm + "\n"
-            msg += ", ".join(header) + " !=\n"
-            msg += ", ".join(shouldbe)
-            raise RuntimeError(msg)
+            msg = "CHEM: Invalid table header, assuming 'evenodd' @ " + flnm + " "
+            print(msg)
     return myrow + 1, coln, extractor
 
 
@@ -104,7 +102,7 @@ def extract_matrix(ws: Worksheet, extractor, startrow, startcol, flnm):
 
 
 def assemble_chemtable():
-    os.chdir(project_root + "/ALLXLFLZ/")
+    os.chdir(projectroot + "/ALLXLFLZ/")
 
     shouldbe = ["Vegyszer neve", "CAS száma", "Tisztasága", "Szükséges mennyiség", "Cikkszám"]
 
@@ -125,5 +123,5 @@ def assemble_chemtable():
         chain += "\n".join("\t".join(line) for line in data) + "\n"
     print()
 
-    with open(project_root + "chem.csv", "w") as handle:
+    with open(projectroot + "chem.csv", "w") as handle:
         handle.write(chain.replace("None", "-"))

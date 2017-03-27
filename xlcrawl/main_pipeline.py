@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import openpyxl as xl
 
-from SciProjects.xlcrawl import project_root, templateroot, pickleroot
+from SciProjects.xlcrawl import projectroot, templateroot, pickleroot, sourceroot
 from SciProjects.xlcrawl.util import extract_inventory_numbers, iter_flz
 from openpyxl.worksheet import Worksheet
 
@@ -164,14 +164,24 @@ class Header(NamelessAbstraction):
     def __init__(self, data, path, flnm):
         super().__init__(path, flnm, "head", data)
         if isinstance(data, Worksheet):
-            self.data = self.get_timereq_data(data, flnm)
-            self.data.extend(self.get_dj_data(data, flnm))
+            self.data = [None, None]
+            self.data[0] = self.get_timereq_data(data, flnm)
+            self.data[1] = self.get_dj_data(data, flnm)
             self.reparsed = self.data
 
     @staticmethod
     def get_timereq_data(ws, flnm):
         from SciProjects.xlcrawl.extract_timereq import extract_ws
-        return list(extract_ws(ws, flnm))
+        from SciProjects.xlcrawl.util import Allomany
+
+        staffdb = Allomany()
+
+        mtime, ttime, owner, tname = tuple(extract_ws(ws, flnm))
+        mtasz, ttasz = staffdb.tasz(owner), staffdb.tasz(tname)
+        mhely, thely = staffdb.helyettes(owner), staffdb.helyettes(tname)
+        mhtasz, thtasz = staffdb.tasz(mhely), staffdb.tasz(thely)
+        return ((owner, mtasz, mtime, mhely, mhtasz),
+                (tname, ttasz, ttime, thely, thtasz))
 
     @staticmethod
     def get_dj_data(ws, flnm):
@@ -181,7 +191,7 @@ class Header(NamelessAbstraction):
         )
         djname, mname, akkr = walk_columns(ws, flnm)
         djnum = extract_djnum_easy(ws)
-        djdb = DJ(project_root + "Díjjegyzék.xlsx")
+        djdb = DJ(projectroot + "Díjjegyzék.xlsx")
         if djnum is None:
             cands, rfnames, djnums, ps = infer_djnum_from_string(djname, flnm)
             for djnum in djnums:
@@ -195,6 +205,16 @@ class Header(NamelessAbstraction):
                     djnum = ""
         else:
             djname = djdb.djnames[djnum] if djnum else ""
+        djname = djname.replace(str(djnum), "")
+        djname = "".join((djname[:8]
+                          .replace(str(djnum), "")
+                          .replace(".", "")
+                          .strip(),
+                          djname[8:]))
+        djname = (djname
+                  .replace("   ", " ")
+                  .replace("  ", " ")
+                  .strip())
         mnum = djdb.munumbers[djnum] if djnum else ""
         mname = djname
         return [djnum, djname, mnum, mname]
@@ -202,14 +222,16 @@ class Header(NamelessAbstraction):
     def dump(self):
         def cell(rng, val):
             if isinstance(val, str):
+                val = "" if val.lower() in ("none", "-") else val
                 val = int(val) if val.isdigit() else val
-                val = "" if val.lower() == "none" else val
             if val is None:
                 val = ""
             ws[self.ranges[rng]].value = val
 
         handle = self.instantiate_template()
-        mtime, ttime, owner, tname, djnum, djname, mnum, mname = self.data
+        owner, mtasz, mtime, mhely, mhtasz = self.data[0][0]
+        tname, ttasz, ttime, thely, thtasz = self.data[0][1]
+        djnum, djname, mnum, mname = self.data[1]
 
         ws = handle.get_sheet_by_name("Adat")
         cell("djnum", djnum)
@@ -217,9 +239,15 @@ class Header(NamelessAbstraction):
         cell("mnum", mnum)
         cell("mname", djname)
         cell("mernok", owner)
+        cell("mtasz", mtasz)
         cell("mhour", mtime)
+        cell("hmernok", mhely)
+        cell("hmtasz", mhtasz)
         cell("techn", tname)
+        cell("ttasz", ttasz)
         cell("thour", ttime)
+        cell("htechn", thely)
+        cell("httasz", thtasz)
         cell("owner", owner)
         handle.save(f"{self.path}/{self.categ}/{self.flnm}")
 
@@ -279,7 +307,7 @@ def cleanup(dstroot, force=False):
             shutil.rmtree(dstroot + "/" + entry)
 
 
-def crawl(destination, source=project_root):
+def crawl(destination, source=sourceroot):
     cleanup(destination)
 
     for xlworksheet, xlpath in iter_flz(source):
@@ -287,5 +315,5 @@ def crawl(destination, source=project_root):
         method.dump(destination)
 
 if __name__ == '__main__':
-    destroot = "/home/csa/Ideglenessen/onkoltseg_output/"
-    crawl(destroot)
+    destroot = projectroot + "reparsed/"
+    crawl(destination=destroot, source=sourceroot)

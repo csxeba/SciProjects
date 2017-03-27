@@ -3,10 +3,10 @@ import os
 import openpyxl as xl
 from openpyxl.worksheet import Worksheet
 
-from SciProjects.xlcrawl import shinyroot, project_root
+from SciProjects.xlcrawl import shinyroot, projectroot
 from SciProjects.xlcrawl.util import DJ
 
-djdb = DJ(project_root + "Díjjegyzék.xlsx")
+djdb = DJ(projectroot + "Díjjegyzék.xlsx")
 
 ranges = {
     "djnum": "C1",
@@ -57,7 +57,7 @@ def assemble_header_data():
 
     persolnell = pull_data("timereq.csv")
     dj = pull_data("djname.csv")
-    for flnm in os.listdir(project_root + "ALLXLFLZ/"):
+    for flnm in os.listdir(projectroot + "ALLXLFLZ/"):
         print("Doing", flnm)
         tmplt = instantiate_template(flnm)  # type: xl.Workbook
         destws = tmplt.get_sheet_by_name("Adat")  # type: Worksheet

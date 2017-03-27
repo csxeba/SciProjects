@@ -2,7 +2,7 @@ import os
 
 from openpyxl.worksheet import Worksheet
 
-from SciProjects.xlcrawl import project_root
+from SciProjects.xlcrawl import projectroot
 from SciProjects.xlcrawl.util import iter_flz
 
 
