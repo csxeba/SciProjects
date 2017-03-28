@@ -4,6 +4,7 @@ import pickle
 
 import numpy as np
 import openpyxl as xl
+import time
 
 from SciProjects.xlcrawl import projectroot, templateroot, pickleroot, sourceroot
 from SciProjects.xlcrawl.util import extract_inventory_numbers, iter_flz
@@ -29,17 +30,6 @@ class NamelessAbstraction:
         self.categ = categ
         self.data = data
         self.reparsed = None
-        self.flpath = path + "/" + categ + "/" + flnm
-
-    def instantiate_template(self):
-        newpath = f"{self.path}/{self.categ}/"
-        try:
-            os.makedirs(newpath)
-        except FileExistsError:
-            pass
-        handle = xl.load_workbook(self.templates[self.categ])
-        handle.save(newpath + self.flnm)
-        return xl.load_workbook(newpath + self.flnm)
 
 
 class Table(NamelessAbstraction):
@@ -64,7 +54,7 @@ class Table(NamelessAbstraction):
             self.reparse_data()
 
     def empty(self):
-        print("TABLE: empty", self.categ, "table!")
+        print(" !!! TABLE: empty", self.categ, "table!")
         self.data = [["-"] * (5 if self.categ == "chem" else 2)]
 
     def read_data(self, ws):
@@ -130,36 +120,31 @@ class Table(NamelessAbstraction):
             )
         return locator, extractor
 
-    def dump(self):
+    def dump(self, xlwb: xl.Workbook):
         if self.reparsed is None:
             msg = " ".join(("Attempting to dump unreparsed", self.categ, "data"))
             raise RuntimeError(msg)
-        template = self.instantiate_template()
+        ws = xlwb.get_sheet_by_name(self.categ)
         Xn, Yn = self.reparsed.shape
-        ws = template.get_sheet_by_name("Adat")
         cellz = np.array(list(ws.iter_rows(
             min_row=6, max_row=5 + Xn, min_col=1, max_col=Yn
         )))
         for c, d in zip(cellz.ravel(), self.reparsed.ravel()):
             d = str(d).replace("None", "").replace("-", "")
             c.value = int(d) if d.isdigit() else d
-        template.save(f"{self.path}/{self.categ}/{self.flnm}")
 
 
 class Header(NamelessAbstraction):
-    """
-    The header consists of the following fields:
-    [mtime, ttime, mname, tname, djnum, djname, mnum, mname]
-    """
 
     ranges = {
-        "djnum": "C1", "djname": "A4", "owner": "E6",
-        "mname": "E9", "akknums": "E10", "mnum": "E11",
-        "mernok": "A14", "mtasz": "C14", "mhour": "D14",
-        "techn": "E14", "ttasz": "G14", "thour": "H14",
-        "hmernok": "A16", "hmtasz": "C16", "htechn": "E16",
-        "httasz": "G16"
+        "djnum": "4", "djname": "5", "owner": "6",
+        "mname": "9", "akknums": "10", "mnum": "11",
+        "mernok": "14", "mtasz": "15", "mhour": "16",
+        "hmernok": "17", "hmtasz": "18",
+        "techn": "19", "ttasz": "20", "thour": "21",
+        "htechn": "22", "httasz": "23"
     }
+    ranges = {k: "B"+v for k, v in ranges.items()}
 
     def __init__(self, data, path, flnm):
         super().__init__(path, flnm, "head", data)
@@ -219,7 +204,8 @@ class Header(NamelessAbstraction):
         mname = djname
         return [djnum, djname, mnum, mname]
 
-    def dump(self):
+    def dump(self, xlwb: xl.Workbook):
+
         def cell(rng, val):
             if isinstance(val, str):
                 val = "" if val.lower() in ("none", "-") else val
@@ -228,12 +214,11 @@ class Header(NamelessAbstraction):
                 val = ""
             ws[self.ranges[rng]].value = val
 
-        handle = self.instantiate_template()
+        ws = xlwb.get_sheet_by_name("head")
         owner, mtasz, mtime, mhely, mhtasz = self.data[0][0]
         tname, ttasz, ttime, thely, thtasz = self.data[0][1]
         djnum, djname, mnum, mname = self.data[1]
 
-        ws = handle.get_sheet_by_name("Adat")
         cell("djnum", djnum)
         cell("djname", djname)
         cell("mnum", mnum)
@@ -249,7 +234,6 @@ class Header(NamelessAbstraction):
         cell("htechn", thely)
         cell("httasz", thtasz)
         cell("owner", owner)
-        handle.save(f"{self.path}/{self.categ}/{self.flnm}")
 
 
 class Method:
@@ -258,6 +242,7 @@ class Method:
         path, flnm = _slicepath(flpath)
         self.path = path
         self.flnm = flnm
+        self.outwb = None
         if not ws:
             xlin = xl.load_workbook(flpath)
             self.ws = xlin.worksheets[0]
@@ -278,12 +263,18 @@ class Method:
         return "Melléklet" in (self.ws["A1"].value, self.ws["A2"].value)
 
     def dump(self, newroot):
+        outwb = xl.load_workbook(templateroot + "template.xlsx")
         self.save()
         os.chdir(newroot)
-        self.head.dump()
-        self.chem.dump()
-        self.item.dump()
-        self.inst.dump()
+        self.head.dump(outwb)
+        self.chem.dump(outwb)
+        self.item.dump(outwb)
+        self.inst.dump(outwb)
+        try:
+            os.makedirs(f"{self.path}")
+        except FileExistsError:
+            pass
+        outwb.save(f"{self.path}/{self.flnm}")
 
     def save(self, path=None):
         if path is None:
@@ -315,5 +306,7 @@ def crawl(destination, source=sourceroot):
         method.dump(destination)
 
 if __name__ == '__main__':
+    start = time.time()
     destroot = projectroot + "reparsed/"
     crawl(destination=destroot, source=sourceroot)
+    print(f"--- FINITE --- ({time.time()-start:>.4f})")
