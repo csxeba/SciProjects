@@ -115,7 +115,7 @@ def trimstr(ugly):
 
 class DJ:
 
-    def __init__(self, xlpath):
+    def __init__(self, xlpath=projectroot+"Díjjegyzék.xlsx"):
         self.djnames = {}
         self.munumbers = {}
         self.munames = {}
