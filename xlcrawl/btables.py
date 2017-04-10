@@ -10,6 +10,7 @@ root = projectroot + "BobeTables/"
 dj = DJ()
 personell = Allomany()
 
+
 def pullinfo(flpath):
     ws = xl.load_workbook(flpath).worksheets[0]
     data = []
@@ -78,6 +79,7 @@ def main():
         print("\rDoing DJN: {:>4}".format(djn), end="")
         dump(djn, hours, *tabz)
     print()
+
 
 if __name__ == '__main__':
     main()
