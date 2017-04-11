@@ -152,3 +152,22 @@ class Allomany:
 
     def helyettes(self, nev):
         return self.get("hely", nev)
+
+
+headranges = {
+    "djn": "B4",
+    "djname": "B5",
+    "owner": "B6",
+    "mernok": "B14",
+    "mtasz": "B15",
+    "mtime": "B16",
+    "techni": "B19",
+    "ttasz": "B20",
+    "ttime": "B21",
+    "hmernok": "B17",
+    "hmtasz": "B18",
+    "htechni": "B22",
+    "httasz": "B23",
+    "vizsgsum": "B25",
+    "akkrfld": "B26"
+}

@@ -3,28 +3,10 @@ import pickle
 from collections import defaultdict
 
 import openpyxl as xl
-
 from SciProjects.xlcrawl import projectroot
-from SciProjects.xlcrawl.util import Allomany, DJ
-from openpyxl.worksheet import Worksheet
+from SciProjects.xlcrawl.util import Allomany, DJ, headranges
 
-ranges = {
-    "djn": "B4",
-    "djname": "B5",
-    "owner": "B6",
-    "mernok": "B14",
-    "mtasz": "B15",
-    "mtime": "B16",
-    "techni": "B19",
-    "ttasz": "B20",
-    "ttime": "B21",
-    "hmernok": "B17",
-    "hmtasz": "B18",
-    "htechni": "B22",
-    "httasz": "B23",
-    "vizsgsum": "B25",
-    "akkrfld": "B26"
-}
+from openpyxl.worksheet import Worksheet
 
 personell = Allomany()
 dj = DJ()
@@ -75,19 +57,19 @@ def inject_hpeople(xlwb: xl.Workbook, flnm):
         return ", ".join(chainz)
 
     head = xlwb.get_sheet_by_name("head")
-    mernok = correct(head[ranges["mernok"]].value)
-    technikus = correct(head[ranges["techni"]].value)
-    djn = str(head[ranges["djn"]].value).replace(".", "")
-    head[ranges["mernok"]].value = mernok
-    head[ranges["mtasz"]].value = personell.tasz(mernok)
-    head[ranges["techni"]].value = technikus
-    head[ranges["ttasz"]].value = personell.tasz(technikus)
-    head[ranges["hmernok"]].value = parse_helyettes(mernok)
-    head[ranges["hmtasz"]].value = ""
-    head[ranges["htechni"]].value = parse_helyettes(technikus)
-    head[ranges["httasz"]].value = ""
-    mtime = str(head[ranges["mtime"]].value)
-    ttime = str(head[ranges["ttime"]].value)
+    mernok = correct(head[headranges["mernok"]].value)
+    technikus = correct(head[headranges["techni"]].value)
+    djn = str(head[headranges["djn"]].value).replace(".", "")
+    head[headranges["mernok"]].value = mernok
+    head[headranges["mtasz"]].value = personell.tasz(mernok)
+    head[headranges["techni"]].value = technikus
+    head[headranges["ttasz"]].value = personell.tasz(technikus)
+    head[headranges["hmernok"]].value = parse_helyettes(mernok)
+    head[headranges["hmtasz"]].value = ""
+    head[headranges["htechni"]].value = parse_helyettes(technikus)
+    head[headranges["httasz"]].value = ""
+    mtime = str(head[headranges["mtime"]].value)
+    ttime = str(head[headranges["ttime"]].value)
     if not djn.isdigit():
         return
     mn = dj.munumbers[int(djn)]
@@ -103,16 +85,16 @@ def inject_hpeople(xlwb: xl.Workbook, flnm):
             print("MISSING TTIME IN", flnm, "DJZ:", dj.mu_to_dj(mn))
         else:
             ttime = ttime[1]
-    head[ranges["mtime"]] = mtime
-    head[ranges["ttime"]] = ttime
+    head[headranges["mtime"]] = mtime
+    head[headranges["ttime"]] = ttime
 
 
 def gettimes(ws):
-    djn = ws[ranges["djn"]].value
+    djn = ws[headranges["djn"]].value
     if not str(djn).isdigit():
         return None
     mnum = dj.munumbers[int(djn)]
-    mtime, ttime = ws[ranges["mtime"]].value, ws[ranges["ttime"]].value
+    mtime, ttime = ws[headranges["mtime"]].value, ws[headranges["ttime"]].value
     if mtime is None or ttime is None:
         return None
     return {mnum: [mtime, ttime]}
@@ -146,22 +128,22 @@ def getduper(headws, flnm):
 
 
 def fill_owner(ws, flnm):
-    v = str(ws[ranges["owner"]])
-    if len(str(ws[ranges["mernok"]].value)) < 7:
+    v = str(ws[headranges["owner"]])
+    if len(str(ws[headranges["mernok"]].value)) < 7:
         print("!! UNFIXABLE:", flnm)
     if len(v) < 7:
         print("FIXING", flnm)
-    ws[ranges["owner"]].value = ws[ranges["mernok"]].value
+    ws[headranges["owner"]].value = ws[headranges["mernok"]].value
 
 
 def fill_vizsgsum(ws: Worksheet, flnm):
     ws.protection.disable()
-    djn = str(ws[ranges["djn"]].value).replace(".", "")
+    djn = str(ws[headranges["djn"]].value).replace(".", "")
     if not djn.isdigit():
         print("SKIPPED", flnm)
         return
     insert = "2016-ban ezt a vizsgálatot {} alkalommal végezték."
-    ws[ranges["vizsgsum"]].value = insert.format(vsum[int(djn)])
+    ws[headranges["vizsgsum"]].value = insert.format(vsum[int(djn)])
 
 
 def move_to_destination(xlstream, root):
@@ -171,8 +153,8 @@ def move_to_destination(xlstream, root):
     for flnm in xlstream:
         wb = getwb(root + flnm)
         ws = wb["head"]
-        djn = str(ws[ranges["djn"]].value).strip().replace(".", "")
-        djname = ws[ranges["djname"]].value
+        djn = str(ws[headranges["djn"]].value).strip().replace(".", "")
+        djname = ws[headranges["djname"]].value
         if not djn.isdigit():
             djn = "U{:0>2}".format(unknown)
             unknown += 1
