@@ -1,9 +1,14 @@
-from csxdata import CData, roots
-from csxdata.stats.inspection import correlation, category_frequencies
-from csxdata.stats.normality import full,
+from SciProjects.sophie import projectroot
 
-winesource = roots["csvs"] + "sophiewine.csv"
-frame = CData(winesource, indeps=4, headers=1, cross_val=0., feature="COUNTRY", decimal=True)
-category_frequencies(frame.indeps)
-correlation(frame.data, ("DH1", "DH2", "D13C"))
-full(frame.data)
+from csxdata.utilities.parsers import parse_csv
+from csxdata.utilities.vectorops import discard_NaN_rows
+from csxdata.stats.inspection import category_frequencies, correlation
+from csxdata.stats.normality import full
+
+X, Y, head = parse_csv(projectroot + "01GEO.csv",
+                       indeps=2, headers=1, decimal=True)
+
+category_frequencies(Y)
+X, Y = discard_NaN_rows(X, Y)
+correlation(X, ["X", "Y", "DH1", "DH2"])
+full(X)

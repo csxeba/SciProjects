@@ -98,15 +98,17 @@ def getdata():
 
 
 def main():
-    data = np.load(projectroot + "datasaved.npy")
-    # data = getdata()
+    if os.path.exists(projectroot + "datasaved.npy"):
+        data = np.load(projectroot + "datasaved.npy")
+    else:
+        data = getdata()
     assert data.ndim == 2
     print("Dumping to csv...")
     with open(projectroot + "instusage_full.csv", "w") as handle:
         handle.write("\n".join("\t".join(line) for line in data))
-    print(" -- END PROGRAM -- ")
     print("Assembling...")
     dumpinstusage(data)
+    print(" -- END PROGRAM -- ")
 
 if __name__ == '__main__':
     main()

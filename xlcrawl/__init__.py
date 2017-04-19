@@ -1,5 +1,5 @@
-# projectroot = "/home/csa/onkoltseg/"
-projectroot = "/data/Ideglenessen/Project_onkoltseg/"
+projectroot = "/home/csa/onkoltseg/"
+# projectroot = "/data/Ideglenessen/Project_onkoltseg/"
 sourceroot = projectroot + "fresh/"
 templateroot = projectroot + "templates/"
 pickleroot = projectroot + "pkls/"
