@@ -142,7 +142,7 @@ def display(xycov1, xycov2, p1, p2, species, smplnm, smpl=None, skiprot=False,
 
     plt.title("{} ({}) vs. Kukorica".format(smplnm, species), y=1.05)
     if dump:
-        plt.savefig("D:/tmp/alkpics/{}.png".format(smplnm), bbox_inches="tight")
+        plt.savefig("/home/csa/tmp/alkpics/{}.png".format(smplnm), bbox_inches="tight")
     plt.close()
 
 

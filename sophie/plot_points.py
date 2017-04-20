@@ -1,16 +1,17 @@
-from sklearn.feature_selection import f_classif
+import numpy as np
+from matplotlib import pyplot as plt
 
 from csxdata.utilities.parsers import parse_csv
-from csxdata.utilities.highlevel import plot, transform
+from csxdata.utilities.vectorops import argfilter
 
 from SciProjects.sophie import projectroot
 
 
 X, Y, head = parse_csv(projectroot + "01GEO.csv",
-                       indeps=4, headers=1, decimal=True,
-                       discard_nans=True, discard_class_treshold=5,
-                       feature="COUNTRY")
-tX = transform(X, factors=1, get_model=False, method="lda", y=Y)
+                       indeps=4, headers=1, decimal=True)
 
-print("F: {}, pval: {}".format(*f_classif(tX, Y)))
-plot(X, Y, axlabels=["$(D/H)_I$", r"$\delta^{13}C$"], ellipse_sigma=2)
+y_coord = Y[:, -1]
+countries = Y[:, 1]
+DHI, D13C = X.T
+plt.scatter(y_coord, D13C)
+plt.show()
