@@ -1,4 +1,4 @@
-from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import f_oneway
 
 from csxdata.stats import inspection
 from csxdata.utilities.highlevel import plot, transform

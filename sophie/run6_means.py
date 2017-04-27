@@ -3,10 +3,9 @@ from scipy import stats
 
 from matplotlib import pyplot as plt
 
-from csxdata.utilities.parsers import parse_csv
 from csxdata.utilities.vectorops import split_by_categories, discard_NaN_rows
 
-from SciProjects.sophie import projectroot
+from SciProjects.sophie import pull_data, axtitles
 
 
 def split_by_CCode(param):
@@ -34,11 +33,20 @@ def plotem(byCCode, pnm, absolute):
     # ax.errorbar(Y, X, yerr=std*2, fmt="bX",
     #             ecolor="red", elinewidth=1,
     #             capsize=4)
-    if absolute:
-        Y = np.abs(Y)
-    ax.scatter(Y, X, color="black", marker="o", s=7)
-    fit = np.polyfit(Y, X, 1)
-    lin = np.poly1d(fit)
+    south = np.zeros_like(Y)
+    south[Y < 0.] = 1.
+    south = south.astype(bool)
+    aY = np.abs(Y)
+    ax.scatter(Y[south], X[south], color="red", marker="o", s=7)
+    ax.scatter(aY[south], X[south], color="red", marker="o", s=7)
+    ax.scatter(aY[~south], X[~south], color="black", marker="o", s=7)
+    fit1 = np.polyfit(Y[~south], X[~south], 1)
+    fit2 = np.polyfit(Y[south], X[south], 1)
+    print("FIT1:", fit1)
+    print("FIT2:", fit2)
+    lin = np.poly1d(fit1)
+    ax.plot(Y, lin(Y), "r-")
+    lin = np.poly1d(fit2)
     ax.plot(Y, lin(Y), "r-")
     r, p = correlate(pnm)
     for label, y, x in zip(annot, Y, X):
@@ -56,16 +64,9 @@ def plotem(byCCode, pnm, absolute):
     plt.show()
 
 
-axtitles = {"DHI": "$(D/H)_I$ (ppm)", "D13C": "$\\delta^{13}C$ (‰)"}
-
-data, labels, header = parse_csv(projectroot + "01GEO.csv", indeps=2, headers=1,
-                                 dehungarize=True, decimal=True, sep="\t")
-X_C, Y_C, DHI, D13C = data.T
-
-
-CCode = labels[:, 0]
+X_C, Y_C, DHI, D13C, CCode = pull_data("04GEO_full.csv", sep=";")
 
 dh1cc = split_by_CCode(DHI)
 d13cc = split_by_CCode(D13C)
-plotem(dh1cc, "DHI", absolute=True)
+plotem(dh1cc, "DHI", absolute=False)
 plotem(d13cc, "D13C", absolute=False)
