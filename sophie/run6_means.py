@@ -9,7 +9,7 @@ from SciProjects.sophie import pull_data, axtitles
 
 
 def split_by_CCode(param):
-    bycat = split_by_categories(param, CCode, argsonly=True)
+    bycat = split_by_categories(CCode)
     new = {}
     for cat in bycat:
         catargs = bycat[cat]
