@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy import stats
 from matplotlib import pyplot as plt
@@ -9,7 +11,7 @@ from csxdata.visual import Plotter2D
 
 from SciProjects.sophie import axtitles
 
-currentroot = "/data/Dokumentumok/SciProjects/Project_Sophie/"
+currentroot = "/home/csa/SciProjects/Project_Sophie/"
 
 orange = ["orange", 103.378571428571, -25.8928571428571,
           6.53412087912087, 2.09763736263736, -0.635989010989013]
@@ -36,12 +38,15 @@ def get_ellipse_data(line):
     return means, cov, name
 
 
-def add_reference_ellipses(ax, sigma):
+def add_reference_ellipses(ax, sigma, these=None):
     data = open(currentroot + "RefEllipses.csv").read().split("\n")
     data = [line.split("\t") for line in data[1:] if line]
     for line in data:
         means, cov, name = get_ellipse_data(line)
-        add_ellipse(ax, means, cov, sigma, colors[name[:4]], name)
+        if these is not None:
+            if name not in these:
+                continue
+        add_ellipse(ax, means, cov, sigma, colors[name[:4]], name+" referencia")
 
 
 def add_ellipse(ax, means, cov, sigma, color, name, **kw):
@@ -57,7 +62,9 @@ def add_ellipse(ax, means, cov, sigma, color, name, **kw):
     ell.set_edgecolor(color)
     ax.scatter(means[0], means[1], color=color, marker="x")
     ax.add_patch(ell)
-    ax.annotate(name, xy=means, xycoords="data")
+    ax.annotate(name, xy=means, xycoords="data",
+                horizontalalignment="right",
+                verticalalignment="bottom")
 
 
 def load_eu_irms():
@@ -146,15 +153,12 @@ def xperiment_italian(pnm, param, Y_C, ttl):
 
 
 def xperiment_apple_ellipse():
-    rmeans = np.array([96.6775, -27.7508])
-    rcov = np.array([[0.46217, 0.20483], [0.20483, 0.86992]])
-
     X, Y, head = parse_csv(currentroot + "cseh.csv", 1, 1, decimal=True)
     plotter = Plotter2D(plt.gcf(), X, Y.ravel(),
                         axlabels=[axtitles["DHI"], axtitles["D13C"]])
     plotter.split_scatter(False, sigma=0, label=True)
-    plotter.add_legend(plt, "bottom left", 2)
-    add_ellipse(plotter.ax, rmeans, rcov, 2, "red", "referencia alma")
+    # plotter.add_legend(plt, "bottom left", 2)
+    add_reference_ellipses(plotter.ax, 2)
     plt.title("Csehországi minták a magyar almakörhöz képest")
     plt.show()
 
@@ -171,25 +175,35 @@ def xperiment_orange():
     plt.show()
 
 
+def xperiment_sophiexp():
+    X, Y, head = parse_csv(currentroot + "SophieXP.csv")
+    plotter = Plotter2D(plt.gcf(), X, Y.ravel(),
+                        axlabels=[axtitles["DHI"], axtitles["D13C"]])
+    add_reference_ellipses(plotter.ax, 2, ["alma"])
+    add_reference_ellipses(plotter.ax, 3, ["alma"])
+    plotter.scatter(label_points=plotter.Y)
+    plt.show()
+
+
 def main():
 
     # ttl = r"$(D/H)_I$ és az egyenlítőtől való távolság közötti összefüggés"
     # param, Y_C, labels = load_eu_nmr()
     # xperiment_param_vs_Ycoord("DHI", param, Y_C, labels, ttl)
-
+    #
     # ttl = r"$\delta^{13}C$ és az egyenlítőtől való távolság közötti összefüggés"
     # param, Y_C, labels = load_eu_irms()
     # xperiment_param_vs_Ycoord("D13C", param, Y_C, labels, ttl)
-
+    #
     # ttl = "Különböző országok $2\sigma$ konfidencia-ellipszisei " + \
     #       "a ${(D/H)_I; \delta^{13}C}$ paramétertérben"
     # param, labels = load_eu_full()
     # xperiment_ellipses(param, labels, ttl)
-
+    #
     # ttl = r"$(D/H)_I$ és az egyenlítőtől való távolság közötti összefüggés világszerte"
     # param, Y_C, labels = load_world_nmr()
     # xperiment_world_correlation("DHI", param, Y_C, labels, ttl)
-
+    #
     # DHI, D13C, Y_C = load_italian_data().T
     #
     # ttl = r"$(D/H)_I$ és az egyenlítőtől való távolság közötti összefüggés az olasz pontoknál"
@@ -197,9 +211,12 @@ def main():
     # ttl = r"$\delta^{13}C$ és az egyenlítőtől való távolság közötti összefüggés az olasz pontoknál"
     # xperiment_italian("D13C", D13C, Y_C, ttl)
 
-    # xperiment_apple_ellipse()
+    xperiment_apple_ellipse()
 
-    xperiment_orange()
+    # xperiment_orange()
+
+    # xperiment_sophiexp()
+
 
 if __name__ == '__main__':
     main()
