@@ -1,7 +1,3 @@
-from sympy import symbols, cos, simplify, pprint, sqrt, acos, pi
-from sympy.solvers import solve
-
-
 """
 equation_1: R**2 = (R+B)**2 + b**2 + 2*b*(R+B)*cos(theta-beta)
 solved for R: R = sqrt((R+B)**2 + b**2 + 2*b*(R+B)*cos(theta-beta))
@@ -9,6 +5,10 @@ solved for R: R = sqrt((R+B)**2 + b**2 + 2*b*(R+B)*cos(theta-beta))
 equation_2: (R+A)**2 = (R+B)**2 + a**2 + 2*a*(R+B)*cos(theta)
 solved for R: R = sqrt((R+B)**2 + a**2 + 2*a*(R+B)*cos(theta) - 2*R*A - A**2)
 """
+
+from sympy import symbols, cos, simplify, pprint, sqrt, acos, pi
+from sympy.solvers import solve
+
 
 # These are the constants
 B, A, b, a, beta = symbols(("B", "A", "b", "a", "beta"))
