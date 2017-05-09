@@ -1,11 +1,11 @@
-import warnings
-
 import numpy as np
 from scipy import stats
 from matplotlib import pyplot as plt
+from matplotlib.patches import Rectangle
 from sklearn.feature_selection import f_classif
 
 from csxdata.utilities.parsers import parse_csv
+from csxdata.utilities.vectorops import split_by_categories
 from csxdata.utilities.highlevel import transform
 from csxdata.visual import Plotter2D
 
@@ -152,15 +152,53 @@ def xperiment_italian(pnm, param, Y_C, ttl):
     plt.show()
 
 
-def xperiment_apple_ellipse():
-    X, Y, head = parse_csv(currentroot + "cseh.csv", 1, 1, decimal=True)
-    plotter = Plotter2D(plt.gcf(), X, Y.ravel(),
-                        axlabels=[axtitles["DHI"], axtitles["D13C"]])
-    plotter.split_scatter(False, sigma=0, label=True)
-    # plotter.add_legend(plt, "bottom left", 2)
-    add_reference_ellipses(plotter.ax, 2)
-    plt.title("Csehországi minták a magyar almakörhöz képest")
-    plt.show()
+def xperiment_czhech_samples():
+
+    def plotone(czparam, huparam, pnm):
+        plt.title(ttl.format(axtitles[pnm]))
+        ax = plt.gca()  # type: plt.Axes
+
+        for i, name in enumerate(sorted(cznmr), start=1):
+            czmin, czmax = czparam[name]
+            czh = czmax - czmin
+            czr = Rectangle((i-0.2, czmin), 0.2, czh, facecolor="red", edgecolor="black")
+            ax.add_patch(czr)
+            ax.annotate(f"{czmin:.2f}", xy=(i, czmax), xycoords="data",
+                        verticalalignment="bottom", horizontalalignment="right")
+            ax.annotate(f"{czmax:.2f}", xy=(i, czmin-0.05), xycoords="data",
+                        verticalalignment="top", horizontalalignment="right")
+
+            humin, humax = huparam[name]
+            huh = humax - humin
+            hur = Rectangle((i, humin), 0.2, huh, facecolor="green", edgecolor="black")
+            ax.add_patch(hur)
+            ax.annotate(f"{humin:.2f}", xy=(i, humax), xycoords="data",
+                        verticalalignment="bottom", horizontalalignment="left")
+            ax.annotate(f"{humax:.2f}", xy=(i, humin-0.02), xycoords="data",
+                        verticalalignment="top", horizontalalignment="left")
+            ax.autoscale()
+
+        ax.set_ylabel(axtitles["DHI"])
+        ax.set_xlim([0, 7])
+        ax.set_xticklabels([""] + sorted(cznmr))
+
+        fm = plt.get_current_fig_manager()
+        fm.window.showMaximized()
+
+        plt.tight_layout()
+        plt.show()
+
+    X, Y, head = parse_csv(currentroot + "cseh.csv", decimal=True)
+    cznmr = dict(zip(Y.ravel(), X[:, :2]))
+    czirms = dict(zip(Y.ravel(), X[:, 2:]))
+    X, Y, head = parse_csv(currentroot + "SZIdata.csv", 4)
+    Y = Y[:, 3]
+    hudict = split_by_categories(Y.ravel(), X)
+    hunmr = {name: (d[:, 0].min(), d[:, 0].max()) for name, d in hudict.items()}
+    huirms = {name: (d[:, 2].min(), d[:, 2].max()) for name, d in hudict.items()}
+    ttl = "Cseh (piros) és magyar (zöld) {} érték tartományainak összevetése"
+    plotone(cznmr, hunmr, "DHI")
+    plotone(czirms, huirms, "D13C")
 
 
 def xperiment_orange():
@@ -211,7 +249,7 @@ def main():
     # ttl = r"$\delta^{13}C$ és az egyenlítőtől való távolság közötti összefüggés az olasz pontoknál"
     # xperiment_italian("D13C", D13C, Y_C, ttl)
 
-    xperiment_apple_ellipse()
+    xperiment_czhech_samples()
 
     # xperiment_orange()
 
