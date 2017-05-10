@@ -46,7 +46,7 @@ def add_reference_ellipses(ax, sigma, these=None):
         if these is not None:
             if name not in these:
                 continue
-        add_ellipse(ax, means, cov, sigma, colors[name[:4]], name+" referencia")
+        add_ellipse(ax, means, cov, sigma, colors[name[:4]], name+" referencia átlag")
 
 
 def add_ellipse(ax, means, cov, sigma, color, name, **kw):
@@ -102,7 +102,7 @@ def xperiment_param_vs_Ycoord(pnm, param, Y_C, labels, ttl):
                         axlabels=("Egyenlítőtől való távolság (°)", axtitles[pnm]))
     plotter.split_scatter(sigma=0, dumppath=currentroot + "PIX/")
     plotter.add_trendline(color="red", linewidth=2)
-    plotter.add_legend(plt)
+    plotter.add_legend(plt, "lower left", ncol=3)
     plt.title(ttl + "\nPearson korreláció: r = {:.3f}, p = {:.3f}, {}szignifikáns"
               .format(r, p, ("nem" if p > 0.05 else "")))
     plt.show()
@@ -178,7 +178,7 @@ def xperiment_czhech_samples():
                         verticalalignment="top", horizontalalignment="left")
             ax.autoscale()
 
-        ax.set_ylabel(axtitles["DHI"])
+        ax.set_ylabel(axtitles[pnm])
         ax.set_xlim([0, 7])
         ax.set_xticklabels([""] + sorted(cznmr))
 
@@ -218,7 +218,7 @@ def xperiment_sophiexp():
     plotter = Plotter2D(plt.gcf(), X, Y.ravel(),
                         axlabels=[axtitles["DHI"], axtitles["D13C"]])
     add_reference_ellipses(plotter.ax, 2, ["alma"])
-    add_reference_ellipses(plotter.ax, 3, ["alma"])
+    # add_reference_ellipses(plotter.ax, 3, ["alma"])
     plotter.scatter(label_points=plotter.Y)
     plt.show()
 
@@ -254,6 +254,8 @@ def main():
     # xperiment_orange()
 
     # xperiment_sophiexp()
+
+    pass
 
 
 if __name__ == '__main__':
