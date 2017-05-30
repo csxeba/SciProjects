@@ -1,5 +1,10 @@
-from skimage import io
+from skimage import io, measure
 
 
-def get_image():
-    return (1 - io.imread("/home/csa/Rizs/S1-1bin.png") / 255).astype(bool)
+def get_image(path):
+    flnm = path.split("/")[-1]
+    dirz = "/".join(path.split("/")[:-1])
+    binned = (io.imread(path) / 255).astype(bool)
+    labelled = measure.label(binned)
+    prps = measure.regionprops(labelled)
+    return prps, flnm, dirz

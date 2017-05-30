@@ -1,18 +1,15 @@
-import sys
 import time
 
 from skimage import measure
-
-from csxdata import roots
 
 from SciProjects.imaging import pull_data, preprocess
 from SciProjects.imaging.scrape_info import get_mapping
 from SciProjects.imaging.algorithm import *
 
-root = "D:/tmp/PIC/"
-oldpics = "D:/Dohany_kepanalizis/"
-source = "D:/tmp/jpegs/" if sys.platform == "win32" else roots["ntabpics"]
-annotpath = "D:/tmp/annotated/"
+root = "/home/csa/tmp/PIC/"
+oldpics = "/home/csa/Dohany_kepanalizis/"
+source = "/home/csa/tmp/jpegs/"
+annotpath = "/home/csa/tmp/annotated/"
 
 SCALE = 0.0085812242798
 MINAREA = 10000
@@ -54,5 +51,5 @@ def run(randomize=False, verbose=1, **kw):
 
 if __name__ == '__main__':
     start = time.time()
-    run(show=False, deg=5, SCALE=SCALE, randomize=True, savepath="d:/tmp/annotated/")
+    run(show=False, deg=5, SCALE=SCALE, randomize=True, savepath="/home/csa/tmp/annotated/")
     print("Run took {:.3f} seconds!".format(time.time()-start))

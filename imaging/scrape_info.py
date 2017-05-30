@@ -6,9 +6,7 @@ import numpy as np
 def get_mapping(rootdir):
     mp = {}
     pjoin = os.path.join
-    for samplename in sorted(filter(
-            lambda d: len(d) == 4,
-            os.listdir(rootdir))):
+    for samplename in sorted(os.listdir(rootdir)):
         for parallel in sorted(filter(
                 lambda d: len(d) == 1,
                 os.listdir(pjoin(rootdir, samplename)))):
