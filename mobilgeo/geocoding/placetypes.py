@@ -34,7 +34,6 @@ class AddressCache:
             self.dct = {}
         self.cchpath = cchpath
 
-
     def get(self, rawname):
         if rawname not in self.dct:
             return None
@@ -105,7 +104,6 @@ class PlaceType(abc.ABC):
             self.x = self.y = self.address = "none"
         if cacher is not None:
             cacher(self)
-
 
     def geocode(self):
         if self.x or self.y == "none":

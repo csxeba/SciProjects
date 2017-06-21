@@ -1,5 +1,5 @@
 import numpy as np
-from mobilgeo.geocoding.utility import haversine, euclidean, sort_coords
+from SciProjects.mobilgeo.geocoding.utility import haversine, euclidean, sort_coords
 from shapefile import Reader
 
 # Header of shapefile records:

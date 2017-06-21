@@ -8,6 +8,7 @@ from SciProjects.mobilgeo.geocoding.placetypes import *
 def fix_carno(carno: str):
     return carno.replace(" ", "").replace("-", "")
 
+
 @np.vectorize
 def fix_address(chain):
     return chain\
@@ -51,13 +52,13 @@ def separate_classes(stream):
     dothese = sorted(list(filter(lambda a: a not in cache, stream)))
 
     ktbt = lambda a:\
-            "külter" in a.lower() or\
-            "belter" in a.lower() or\
-            "kt" in a.lower() or\
-            "bt" in a.lower()
+        "külter" in a.lower() or\
+        "belter" in a.lower() or\
+        "kt" in a.lower() or\
+        "bt" in a.lower()
     hrsz = lambda a:\
-            "hrsz" in a.lower() or\
-            "helyrajz" in a.lower()
+        "hrsz" in a.lower() or\
+        "helyrajz" in a.lower()
 
     ktbtstream = sorted(list(filter(ktbt, dothese)))
     hrszstream = sorted(list(filter(hrsz, dothese)))
