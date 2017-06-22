@@ -47,29 +47,38 @@ def extract_unique_placenames():
         handle.write("\n".join(pn for pn in placenames if pn))
 
 
-def separate_classes(stream):
-    cache = AddressCache("/home/csa/Project_MobilGeo/.cache/addresses.pkl")
-    dothese = sorted(list(filter(lambda a: a not in cache, stream)))
+def separate_classes(fileobj):
 
-    ktbt = lambda a:\
-        "külter" in a.lower() or\
-        "belter" in a.lower() or\
-        "kt" in a.lower() or\
-        "bt" in a.lower()
-    hrsz = lambda a:\
-        "hrsz" in a.lower() or\
-        "helyrajz" in a.lower()
+    def confirm(streamname, streamlen):
+        print("Confirm objectification of the '{}' stream! ({} addresses)"
+              .format(streamname, streamlen))
+        return input("[y]/n > ").lower() != "n"
 
-    ktbtstream = sorted(list(filter(ktbt, dothese)))
-    hrszstream = sorted(list(filter(hrsz, dothese)))
-    nicestream = sorted(list(filter(lambda a: not (a in ktbtstream or
-                                                   a in hrszstream),
-                                    dothese)))
+    def ktbtfilter(a):
+        return ("külter" in a.lower() or
+                "belter" in a.lower() or
+                "kt" in a.lower() or
+                "bt" in a.lower())
 
-    objectify = [NiceAddress(addr, cache.set) for addr in nicestream]  # +
-                 # [HRSZ(addr, cache.set) for addr in hrszstream] +
-                 # [KTBT(addr, cache.set) for addr in hrszstream])
+    def hrszfilter(a):
+        return "hrsz" in a.lower() or "helyrajz" in a.lower()
 
+    cache = AddressCache(projectroot + "cache/addresses.pkl")
+    dothese = sorted(filter(lambda a: a not in cache, fileobj))
+    ktbtstream = list(filter(ktbtfilter, dothese))
+    hrszstream = list(filter(hrszfilter, dothese))
+    nicestream = list(filter(lambda a: not (a in ktbtstream or
+                                            a in hrszstream), dothese))
+
+    objectify = []
+    if confirm("Nice", len(nicestream)):
+        objectify += [NiceAddress(addr, cache.set) for addr in nicestream]
+    if confirm("HRSZ", len(hrszstream)):
+        objectify += [HRSZ(addr, cache.set) for addr in hrszstream]
+    if confirm("KTBT", len(hrszstream)):
+        objectify += [KTBT(addr, cache.set) for addr in ktbtstream]
+    if len(objectify) == 0:
+        return
     list(map(cache.set, objectify))
     objectify += [cache.get(rawname) for rawname in
                   cache.dct if rawname not in dothese]
@@ -78,14 +87,13 @@ def separate_classes(stream):
 
 
 def geocode_placenames():
-    root = "/home/csa/Project_MobilGeo/"
-    inpath = root + "Helyek.csv"
+    inpath = projectroot + "Helyek.csv"
     with open(inpath) as handle:
         objects = separate_classes(handle)
         handle.close()
 
     try:
-        handle = open(root + "geocoded.csv", "r")
+        handle = open(projectroot + "geocoded.csv", "r")
     except FileNotFoundError:
         addresses = []
         header = "RAW\tADDR\tX\tY\tFOUND\n"
@@ -94,16 +102,16 @@ def geocode_placenames():
         handle.close()
         header = ""
 
-    handle = open(root + "geocoded.csv", "a")
-    handle.write(header)
-    for i, obj in enumerate(objects, start=1):
-        print(f"\rDoing {i:>4}/{len(objects)}", end="")
-        if obj.address in addresses:
-            print(" obj found in addresses!")
-            continue
-        obj.geocode()
-        addresses.append(obj.address)
-        handle.write(obj.to_outputline())
+    with open(projectroot + "geocoded.csv", "a") as handle:
+        handle.write(header)
+        for i, obj in enumerate(objects, start=1):
+            print(f"\rDoing {i:>4}/{len(objects)}", end="")
+            if obj.address in addresses:
+                print(" obj found in addresses!")
+                continue
+            obj.geocode()
+            addresses.append(obj.address)
+            handle.write(obj.to_outputline())
     print()
 
 
