@@ -125,13 +125,13 @@ def display(xycov1, xycov2, p1, p2, species, smplnm, smpl=None, skiprot=False,
     ell2.set_facecolor("none")
     ax.add_artist(ell1)
     ax.add_artist(ell2)
-    ax.plot([xycov1[0], xycov2[0]], [xycov1[1], xycov2[1]],
-            color="blue")
-    ax.plot(*p1, marker="o", color="green")
-    ax.plot(*p2, marker="o", color="blue")
-    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle="--", color="black")
+    _time_scatter([xycov1[0], xycov2[0]], [xycov1[1], xycov2[1]],
+                     color="blue")
+    _time_scatter(*p1, marker="o", color="green")
+    _time_scatter(*p2, marker="o", color="blue")
+    _time_scatter([p1[0], p2[0]], [p1[1], p2[1]], linestyle="--", color="black")
     if smpl is not None:
-        ax.plot(*smpl, marker="o", color="red")
+        _time_scatter(*smpl, marker="o", color="red")
     eps = 0
     ax.set_xlim([min(ell1.center[0]-ell1.width-eps, ell2.center[0]-ell2.width-eps),
                 max(ell1.center[0]+ell1.width+eps, ell2.center[0]+ell2.width+eps)])

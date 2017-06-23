@@ -22,11 +22,11 @@ dgrams = np.diff(grams.astype(float))
 fig, axar = plt.subplots(2, sharex=True)
 
 axar[0].set_title("A Doktorandusz hízása")
-axar[0].plot(days, grams.ravel(), color="blue")
+_time_scatter(days, grams.ravel(), color="blue")
 axar[0].scatter(days, grams.ravel(), marker="o", color="red")
 
 axar[1].set_title("d{A Doktorandusz hízása}/dx")
-axar[1].plot(days[1:], dgrams / ddays, color="blue")
+_time_scatter(days[1:], dgrams / ddays, color="blue")
 axar[1].scatter(days[1:], dgrams / ddays, marker="o", color="red")
 
 plt.show()

@@ -45,9 +45,9 @@ def plotem(byCCode, pnm, absolute):
     print("FIT1:", fit1)
     print("FIT2:", fit2)
     lin = np.poly1d(fit1)
-    ax.plot(Y, lin(Y), "r-")
+    _time_scatter(Y, lin(Y), "r-")
     lin = np.poly1d(fit2)
-    ax.plot(Y, lin(Y), "r-")
+    _time_scatter(Y, lin(Y), "r-")
     r, p = correlate(pnm)
     for label, y, x in zip(annot, Y, X):
         ax.annotate(label, xy=(y, x), xycoords="data",

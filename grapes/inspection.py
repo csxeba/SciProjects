@@ -31,7 +31,7 @@ def normality_tests(hist=True):
             mean, std = feature.mean(), feature.std()
             n, bins, patches = ax.hist(feature, 10, normed=1, facecolor="green", alpha=0.75)
             y = normpdf(bins, mean, std)
-            axes[i].plot(bins, y, "r--", linewidth=1)
+            _time_scatter(bins, y, "r--", linewidth=1)
             ax.grid(True)
         plt.show()
 

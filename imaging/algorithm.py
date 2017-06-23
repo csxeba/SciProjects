@@ -77,8 +77,8 @@ def algo_fitpolynom(prps, **kw):
             leftY = lsp + x0
             rightX = rcurve(lsp) + y0
             rightY = lsp + x0
-            ax.plot(leftX, leftY, "--", color="yellow")
-            ax.plot(rightX, rightY, "--", color="yellow")
+            _time_scatter(leftX, leftY, "--", color="yellow")
+            _time_scatter(rightX, rightY, "--", color="yellow")
             ann = "{}\nleftR:\n{:.4f}\nrightR:\n{:.4f}\nMEAN:\n{:.4f}"\
                 .format(i, log["lr"], log["rr"], avg)
             ax.text(y1+10, x1 - 650, ann, color="white")
