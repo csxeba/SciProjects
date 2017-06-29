@@ -47,13 +47,13 @@ class WindowedPlot:
         vargs = splitargs.get("1", [])
         return xy, ages, iargs, vargs
 
-    def time_scatter_valid(self, xy, ages, args, mpl_obj):
+    def time_scatter_invalid(self, xy, ages, args, mpl_obj):
         if not _time_scatter(xy, args, mpl_obj):
             return
         szs = (1.5 * (ages[args]+1))**5
         mpl_obj.set_sizes(szs)
 
-    def time_scatter_invalid(self, xy, ages, args, mpl_obj):
+    def time_scatter_valid(self, xy, ages, args, mpl_obj):
         if not _time_scatter(xy, args, mpl_obj):
             return
         # mpl_obj.set_sizes(10 * (ages[args]+1))
@@ -65,10 +65,33 @@ class WindowedPlot:
                              vmin=0, vmax=1)
         return obj
 
+    def init_hexbin(self):
+        return self.ax.hexbin(self.rxy[:, 0], self.rxy[:, 1], bins="log", alpha=0.5)
+
     def heatmap_valid(self, xy, ages, args, mpl_obj):
         # w = (1.5 * ages[args]+1) ** 4  # type: np.ndarray
         hm, xe, ye = np.histogram2d(xy[args, 0], xy[args, 1], bins=100)
         mpl_obj.set_data(hm)
+
+    def hexbin_valid(self, xy, ages, args, mpl_obj):
+        mpl_obj.set_array(xy[args])
+
+    def slide(self, start, window_size, step=1):
+        end = self.dates.max()
+        while start + window_size < end:
+            xy, ages, iargs, vargs = self.get_current_points(start, start + window_size)
+            yield xy, ages, iargs, vargs, start
+            start += step
+
+    def efficiency_curve(self):
+        pointstream = self.slide(self.dates.min(), 30, 1)
+        eff = []
+        for xy, ages, iargs, vargs, start in pointstream:
+            lxy = len(xy)
+            if not lxy:
+                continue
+            eff.append(len(iargs) / lxy)
+        self.ax.plot(np.arange())
 
     def slideplot(self):
         plt.ion()
@@ -76,23 +99,19 @@ class WindowedPlot:
         self.ax.set_xlim([0, 1]); self.ax.set_ylim([0, 1]); self.ax.grid(True)
 
         invobj = self.ax.scatter([], [], c="r", s=30)
-        valobj = self.ax.scatter([], [], c="b", s=5)
+        # valobj = self.ax.scatter([], [], c="b", s=5)
         # valobj = self.init_heatmap()
-        start = self.dates.min()
-        stepsize = np.timedelta64(30)
+        valobj = self.init_heatmap()
         imidx = 1
-        while start + stepsize < self.dates.max():
-            # print("Displaying", start, "-", start+stepsize*2)
-            xy, ages, iargs, vargs = self.get_current_points(start, start+stepsize)
+        pointstream = self.slide(self.dates.min(), 30, 1)
+        for xy, ages, iargs, vargs, start in pointstream:
             if not len(xy):
-                start += 2
                 continue
-            self.time_scatter_invalid(xy, ages, vargs, valobj)
-            self.time_scatter_valid(xy, ages, iargs, invobj)
-            start += 2
-            self.ax.set_title("{} -- {}".format(start, start + stepsize))
+            self.time_scatter_invalid(xy, ages, iargs, invobj)
+            self.heatmap_valid(xy, ages, vargs, valobj)
+            self.ax.set_title("Hatékonyság: {:.2%}".format(len(iargs) / len(xy)))
             plt.pause(0.01)
-            plt.savefig(f"{projectroot}ImOut/{imidx:0>4}.png", format="png")
+            # plt.savefig(f"{projectroot}ImOut/{imidx:0>4}.png", format="png")
             imidx += 1
 
 
