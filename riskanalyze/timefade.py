@@ -1,11 +1,13 @@
+from datetime import datetime
+
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import dates as mdates
 from shapefile import Reader
 
 from csxdata import roots
 from csxdata.utilities.vectorops import split_by_categories, featscale, downscale
 
-from SciProjects.riskanalyze import projectroot
 from SciProjects.riskanalyze.utils import pull_data
 
 # data header: RENDSZAM	SZOLGHELY	DATUM	HELY	MINTA	MEGF
@@ -20,13 +22,13 @@ def _time_scatter(xy, args, mpl_obj):
 
 class WindowedPlot:
 
-    xy, data = pull_data()
-    dates, valid = data[:, 2], data[:, 5]
-    dates = np.array([s.replace(".", "-") for s in dates], dtype="datetime64[D]")
-    hun = np.array(Reader(roots["gis"] + "hun/HUN_adm0.shp").shapes()[0].points)
-    rhun, _dfctr, _ufctr = featscale(hun, return_factors=True)
-    rxy = downscale(xy, *_dfctr)
-    fig, ax = plt.subplots()
+    def __init__(self, filename):
+        self.xy, self.data = pull_data(filename)
+        self.dates, self.valid = self.data[:, 2], self.data[:, 5]
+        self.dates = np.array([s.replace(".", "-") for s in self.dates], dtype="datetime64[D]")
+        self.hun = np.array(Reader(roots["gis"] + "hun/HUN_adm0.shp").shapes()[0].points)
+        self.hun, dfctr, ufctr = featscale(self.hun, return_factors=True)
+        self.rxy = downscale(self.xy, *dfctr)
 
     @property
     def sxy(self):
@@ -47,34 +49,31 @@ class WindowedPlot:
         vargs = splitargs.get("1", [])
         return xy, ages, iargs, vargs
 
-    def time_scatter_invalid(self, xy, ages, args, mpl_obj):
+    @staticmethod
+    def time_scatter_invalid(xy, ages, args, mpl_obj):
         if not _time_scatter(xy, args, mpl_obj):
             return
         szs = (1.5 * (ages[args]+1))**5
         mpl_obj.set_sizes(szs)
 
-    def time_scatter_valid(self, xy, ages, args, mpl_obj):
+    @staticmethod
+    def time_scatter_valid(xy, ages, args, mpl_obj):
+        del ages
         if not _time_scatter(xy, args, mpl_obj):
             return
-        # mpl_obj.set_sizes(10 * (ages[args]+1))
 
-    def init_heatmap(self):
+    def init_heatmap(self, ax):
         hm, xe, ye = np.histogram2d(self.rxy[:, 0], self.rxy[:, 1], bins=100)
         hm /= hm.max()
-        obj = self.ax.imshow(hm, extent=(xe[0], xe[-1], ye[0], ye[-1]),
-                             vmin=0, vmax=1)
+        obj = ax.imshow(hm, extent=(xe[0], xe[-1], ye[0], ye[-1]),
+                        vmin=0, vmax=1)
         return obj
 
-    def init_hexbin(self):
-        return self.ax.hexbin(self.rxy[:, 0], self.rxy[:, 1], bins="log", alpha=0.5)
-
-    def heatmap_valid(self, xy, ages, args, mpl_obj):
+    @staticmethod
+    def heatmap_valid(xy, ages, args, mpl_obj):
         # w = (1.5 * ages[args]+1) ** 4  # type: np.ndarray
-        hm, xe, ye = np.histogram2d(xy[args, 0], xy[args, 1], bins=100)
+        hm, xe, ye = np.histogram2d(xy[args, 0], xy[args, 1], bins=100, weights=ages)
         mpl_obj.set_data(hm)
-
-    def hexbin_valid(self, xy, ages, args, mpl_obj):
-        mpl_obj.set_array(xy[args])
 
     def slide(self, start, window_size, step=1):
         end = self.dates.max()
@@ -83,38 +82,81 @@ class WindowedPlot:
             yield xy, ages, iargs, vargs, start
             start += step
 
-    def efficiency_curve(self):
-        pointstream = self.slide(self.dates.min(), 30, 1)
+    def efficiency_curve(self, windowsize=30):
+        pointstream = self.slide(self.dates.min(), windowsize, 1)
         eff = []
+        hits = []
+        actions = []
+        xs = []
+        ravg_eff = []
+        running_sum = None
+        gamma = (windowsize-1) / windowsize
         for xy, ages, iargs, vargs, start in pointstream:
             lxy = len(xy)
             if not lxy:
                 continue
             eff.append(len(iargs) / lxy)
-        self.ax.plot(np.arange())
+            if running_sum is None:
+                running_sum = eff[-1]
+            else:
+                running_sum = gamma * running_sum + (1. - gamma) * eff[-1]
+            xs.append(start)
+            hits.append(len(iargs))
+            actions.append(len(xy))
+            ravg_eff.append(running_sum / windowsize)
 
-    def slideplot(self):
+        eff, hits, actions = list(map(np.array, (eff, hits, actions)))
+        xs = np.array(xs, dtype="datetime64").astype(datetime)
+        fig, ax = plt.subplots(2, 1, figsize=(12, 8))
+
+        ax[0].plot(xs, hits, "r-", label="Fogások")
+        ax[0].plot(xs, actions, "b-", label="Kiszállások")
+        ax[0].set_title(f"Kiszállások és találatok száma\n({windowsize} napos időablak)")
+        ax[0].set_ylabel("Események száma")
+        ax[0].legend(loc="upper right")
+        ax[0].grid(True, which="major", color="grey", linestyle="-")
+        ax[0].grid(True, which="minor", color="grey", linestyle="--")
+        ax[0].set_xlim(np.datetime64("2013-06").astype(datetime), max(xs.tolist()))
+        ax[0].xaxis.set_major_locator(mdates.YearLocator())
+        ax[0].xaxis.set_minor_locator(mdates.MonthLocator())
+
+        ax[1].plot(xs, eff)
+        ax[1].plot(xs, ravg_eff)
+        ax[1].set_ylabel("Hatékonyság")
+        ax[1].set_xlim(np.datetime64("2013-06").astype(datetime), max(xs.tolist()))
+        ax[1].xaxis.set_major_locator(mdates.YearLocator())
+        ax[1].xaxis.set_minor_locator(mdates.MonthLocator())
+        ax[1].grid(True, which="major", color="grey", linestyle="-")
+        ax[1].grid(True, which="minor", color="grey", linestyle="--")
+        ax[1].set_yticklabels([f"{x:3.0%}" for x in ax[1].get_yticks()])
+
+        plt.tight_layout()
+        plt.show()
+
+    def slideplot(self, windowsize=30):
         plt.ion()
-        self.ax.plot(*self.rhun.T, c="black", linewidth=1)
-        self.ax.set_xlim([0, 1]); self.ax.set_ylim([0, 1]); self.ax.grid(True)
+        fig, ax = plt.subplots(figsize=(12, 8))
+        ax.plot(*self.hun.T, c="black", linewidth=1)
+        ax.set_xlim([0, 1])
+        ax.set_ylim([0, 1])
+        ax.grid(True)
 
-        invobj = self.ax.scatter([], [], c="r", s=30)
-        # valobj = self.ax.scatter([], [], c="b", s=5)
-        # valobj = self.init_heatmap()
-        valobj = self.init_heatmap()
+        invobj = ax.scatter([], [], c="r", s=30)
+        valobj = ax.scatter([], [], c="b", s=5)
+        # valobj = self.init_heatmap(ax)
         imidx = 1
-        pointstream = self.slide(self.dates.min(), 30, 1)
+        pointstream = self.slide(self.dates.min(), windowsize, 1)
         for xy, ages, iargs, vargs, start in pointstream:
             if not len(xy):
                 continue
             self.time_scatter_invalid(xy, ages, iargs, invobj)
-            self.heatmap_valid(xy, ages, vargs, valobj)
-            self.ax.set_title("Hatékonyság: {:.2%}".format(len(iargs) / len(xy)))
+            self.time_scatter_valid(xy, ages, vargs, valobj)
+            ax.set_title("Hatékonyság: {:.2%}".format(len(iargs) / len(xy)))
             plt.pause(0.01)
             # plt.savefig(f"{projectroot}ImOut/{imidx:0>4}.png", format="png")
             imidx += 1
 
 
 if __name__ == '__main__':
-    plotter = WindowedPlot()
-    plotter.slideplot()
+    plotter = WindowedPlot(filename="valid_actions.csv")
+    plotter.slideplot(windowsize=30)

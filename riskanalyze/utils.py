@@ -3,8 +3,8 @@ import numpy as np
 from SciProjects.riskanalyze import projectroot
 
 
-def pull_data():
-    with open(projectroot + "olajok.csv") as handle:
+def pull_data(filename):
+    with open(projectroot + filename) as handle:
         chain = handle.read()
     lines = np.array([line.split("\t") for line in chain.split("\n")[:-1]])
     data = lines[1:, 1:]
