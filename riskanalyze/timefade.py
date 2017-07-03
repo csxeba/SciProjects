@@ -158,5 +158,5 @@ class WindowedPlot:
 
 
 if __name__ == '__main__':
-    plotter = WindowedPlot(filename="valid_actions.csv")
-    plotter.slideplot(windowsize=30)
+    plotter = WindowedPlot(filename="olajok.csv")
+    plotter.efficiency_curve(windowsize=30)
