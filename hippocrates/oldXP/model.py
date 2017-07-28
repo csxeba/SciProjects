@@ -1,11 +1,10 @@
-from keras.models import Sequential
-from keras.layers.core import Dense, Flatten
-from keras.layers.convolutional import Convolution3D
-from keras.layers.pooling import MaxPooling3D
-from keras.optimizers import RMSprop
-
-from SciProjects.hippocrates.generic import load_data
 from csxdata import roots
+from hippocrates.oldXP.generic import load_data
+from keras.layers.convolutional import Convolution3D
+from keras.layers.core import Dense, Flatten
+from keras.layers.pooling import MaxPooling3D
+from keras.models import Sequential
+from keras.optimizers import RMSprop
 
 
 def getnet1(inshape):

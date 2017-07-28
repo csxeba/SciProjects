@@ -14,6 +14,7 @@ All rights go to the respected owners.
 try:
     import numpy
 except ImportError:
+    numpy = None
     raise ImportError("NumPy is not available, please install it!")
 
 from bz.src.ga import Population
