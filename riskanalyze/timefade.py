@@ -26,9 +26,9 @@ class WindowedPlot:
         self.xy, self.data = pull_data(filename)
         self.dates, self.valid = self.data[:, 2], self.data[:, 5]
         self.dates = np.array([s.replace(".", "-") for s in self.dates], dtype="datetime64[D]")
-        self.hun = np.array(Reader(roots["gis"] + "hun/HUN_adm0.shp").shapes()[0].points)
-        self.hun, dfctr, ufctr = featscale(self.hun, return_factors=True)
-        self.rxy = downscale(self.xy, *dfctr)
+        # self.hun = np.array(Reader(roots["gis"] + "hun/HUN_adm0.shp").shapes()[0].points)
+        # self.hun, dfctr, ufctr = featscale(self.hun, return_factors=True)
+        # self.rxy = downscale(self.xy, *dfctr)
 
     @property
     def sxy(self):
@@ -36,7 +36,7 @@ class WindowedPlot:
 
     def select(self, begin, end,):
         mask = np.logical_and(self.dates >= begin, self.dates <= end)
-        return self.rxy[mask], self.dates[mask], self.valid[mask]
+        return self.xy[mask], self.dates[mask], self.valid[mask]
 
     def get_current_points(self, begin, end):
         xy, dates, valid = self.select(begin, end)
