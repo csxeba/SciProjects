@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import openpyxl as xl
 
-from openpyxl.worksheet import Worksheet
 from SciProjects.dbassemble import projectroot
 
 finalzroot = projectroot + "FIN/"
@@ -24,14 +23,6 @@ ranges = {
 ranges = {k: "B" + v for k, v in ranges.items()}
 
 
-class Header:
-
-    def __init__(self, ws: Worksheet):
-        self.data = np.array([
-            ws[c].value for c in sorted(ranges.values(), key=lambda v: int(v[1:]))
-        ])
-
-
 class Method:
 
     ids = set()
@@ -42,7 +33,9 @@ class Method:
         self.flnm = flnm
         self.source = path + flnm
         wb = xl.load_workbook(path + flnm, data_only=True)
-        self.head = Header(wb["head"])
+        self.head = np.array([
+            wb["head"][c].value for c in sorted(ranges.values(), key=lambda v: int(v[1:]))
+        ])
         tabs = pd.read_excel(
             path+flnm, sheetname=["chem", "item", "inst"], header=4
         )
@@ -54,7 +47,7 @@ class Method:
         Method.ids.add(self.id)
 
     def headrow(self):
-        return "\t".join(map(str, self.head.data))
+        return "\t".join(map(str, self.head))
 
     def tabpart(self, which):
         tab = self.__dict__[which].as_matrix().astype(str)
