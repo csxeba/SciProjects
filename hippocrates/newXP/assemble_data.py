@@ -1,10 +1,9 @@
 import os
-import pickle
 
 import numpy as np
 from PIL import Image
 
-dataroot = os.path.expanduser("~/Prog/data/raw/mr/")
+dataroot = os.path.expanduser("~/Prog/data/raw/mr/data/sm01/")
 
 
 def pull_sequence_to_array(root, ds=1):
