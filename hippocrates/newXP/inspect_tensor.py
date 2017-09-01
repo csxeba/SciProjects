@@ -1,24 +1,41 @@
-import os
-
 import numpy as np
-
 from matplotlib import pyplot as plt
 
+from SciProjects.hippocrates import projectroot, dataroot
 
-data = np.load(os.path.expanduser("~/Prog/data/mr/SM_T2pos.npa"))
-data = data.transpose((0, 3, 2, 1, 4))
-data = data[:, ::2, ::2, :, 0]
 
-plt.ion()
-obj = plt.imshow(data[0, :, :, 0], vmin=0, vmax=155, cmap="hot")
+def pull_and_preprocess_data(path):
+    data = np.load(path)
+    print("DATA:", data.shape)
+    data = data.transpose((0, 1, 4, 3, 2))
+    data = data[:, 0, :, ::2, ::2]
+    print("NEWS:", data.shape)
+    return data
 
-fix, fadder = 0, 1
-six, sadder = 0, 1
-for six in range(len(data)):
-    for fix in range(data.shape[-1]):
-        obj.set_data(data[six, :, :, fix])
-        fix += fadder
-        if fix == data.shape[-2] or fix == -1:
-            fadder *= -1
-            fix += fadder
-        plt.pause(0.01)
+
+def animate():
+    data = pull_and_preprocess_data(dataroot + "/SM_T2pos.npa")
+    plt.ion()
+    obj = plt.imshow(data[0, 0, :, :], vmin=0, vmax=255, cmap="hot")
+
+    for tensor in data:
+        for pic in tensor:
+            obj.set_data(pic)
+            plt.pause(0.1)
+
+
+def create_frames():
+    outpath = projectroot + "output/frames/"
+    data = pull_and_preprocess_data(dataroot + "/Tumor_T2pos.npa")
+    i = 0
+    imax = data.shape[0] * data.shape[1]
+    for tensor in data:
+        for pic in tensor:
+            plt.imshow(pic, vmin=0, vmax=255, cmap="hot")
+            plt.title("PROJECT HIPPOCRATES: TUMOR +")
+            plt.savefig(outpath + f"frame.{i:0>3}.png")
+            i += 1
+            print(f"{i:>3}/{imax}")
+
+if __name__ == '__main__':
+    animate()
