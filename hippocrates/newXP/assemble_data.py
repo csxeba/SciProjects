@@ -3,20 +3,13 @@ import os
 import numpy as np
 from PIL import Image
 
-dataroot = os.path.expanduser("~/SciProjects/Project_Hippocrates/data/sinem2/")
+dataroot = os.path.expanduser("~/SciProjects/Project_Hippocrates/data/sinem/")
 
 
-def pull_sequence_to_array(root, ds=1):
+def pull_sequence_to_array(root):
     arz = []
     for fl in sorted(flnm for flnm in os.listdir(root) if flnm[-3:] == "bmp"):
-        ar = np.asarray(Image.open(root+"/"+fl))[..., 0][..., None].astype("uint8")
-        if ar.shape != (894, 661, 1):
-            print("Invalid DIM:", ar.shape)
-            return None
-        ar = ar[136:756, 72:572]
-        if ds > 1:
-            ar = ar[::ds, ::ds]
-        arz.append(ar)
+        arz.append(np.asarray(Image.open(root + "/" + fl))[..., 0][..., None].astype("uint8"))
 
     if not arz:
         print("No pix!", end="")
@@ -40,7 +33,7 @@ allnms = len(names)
 t2 = []
 for i, name in enumerate(sorted(names), start=1):
     print(f"{i:>2}/{allnms} Reading {name}", end=" ")
-    retval = pull_sequence_to_array(name+"/t2", ds=1)
+    retval = pull_sequence_to_array(name+"/T2")
     if retval is None:
         continue
     t2.append(retval)

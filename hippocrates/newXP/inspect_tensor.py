@@ -5,23 +5,17 @@ from SciProjects.hippocrates import projectroot, dataroot
 
 
 def pull_and_preprocess_data(path):
-    data = np.load(path)
-    print("DATA:", data.shape)
-    data = data.transpose((0, 1, 4, 3, 2))
-    data = data[:, 0, :, ::2, ::2]
-    print("NEWS:", data.shape)
-    return data
+    return np.load(path).transpose((0, 1, 4, 3, 2))[:, 0]
 
 
 def animate():
-    data = pull_and_preprocess_data(dataroot + "/SM_T2pos.npa")
+    data = pull_and_preprocess_data(dataroot + "/Sinem_T2.npa")
     plt.ion()
     obj = plt.imshow(data[0, 0, :, :], vmin=0, vmax=255, cmap="hot")
-
     for tensor in data:
         for pic in tensor:
             obj.set_data(pic)
-            plt.pause(0.1)
+            plt.pause(0.01)
 
 
 def create_frames():
@@ -31,7 +25,7 @@ def create_frames():
     imax = data.shape[0] * data.shape[1]
     for tensor in data:
         for pic in tensor:
-            plt.imshow(pic, vmin=0, vmax=255, cmap="hot")
+            plt.imshow(pic, vmin=0, vmax=255, cmap="magma")
             plt.title("PROJECT HIPPOCRATES: TUMOR +")
             plt.savefig(outpath + f"frame.{i:0>3}.png")
             i += 1
