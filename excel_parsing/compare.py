@@ -22,8 +22,8 @@ def strsim_vec(str1, strvec):
     return strsim(str1, strvec)
 
 
-beerk = pd.read_excel(projectroot + "Compare_src/BEERK_2017.xlsx")  # type: pd.DataFrame
-igeny = pd.read_excel(projectroot + "Compare_src/IGENY_2017.xlsx")  # type: pd.DataFrame
+beerk = pd.read_excel(projectroot + "Compare_src/BEERK_2016.xlsx")  # type: pd.DataFrame
+igeny = pd.read_excel(projectroot + "Compare_src/IGENY_2016.xlsx")  # type: pd.DataFrame
 
 head = ["MSACC", "MEGNEV", "JELLEG", "MENNY", "DIM", "TELJESÜLT", "DÁTUM",
         "SIM", "BROWID", "BCIKKSZ", "BMEGNEV", "BJELLEG", "NÖV", "NDIM", "IDŐ"]
@@ -50,4 +50,4 @@ print()
 
 chain = "\n".join("\t".join(map(str, line)) for line in data)
 print(chain)
-print(chain, file=open(projectroot + "matched.csv", "w"))
+print(chain, file=open(projectroot + "matched_2016.csv", "w"))
