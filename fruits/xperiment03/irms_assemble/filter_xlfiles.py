@@ -2,7 +2,7 @@ import os
 import shutil
 from collections import defaultdict
 
-from SciProjects.irms_assemble import projectroot
+from fruits.xperiment03.irms_assemble import projectroot
 
 
 class Sorter:

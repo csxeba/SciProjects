@@ -3,9 +3,8 @@ import shutil
 from datetime import datetime
 
 import xlrd as xl
+from fruits.xperiment03.irms_assemble import projectroot
 from xlrd.sheet import Sheet
-
-from SciProjects.irms_assemble import projectroot
 
 columnoffset = {"EA": 8, "GC": 10}
 
