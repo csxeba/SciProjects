@@ -1,18 +1,13 @@
-from numpy.linalg import norm
-
+import numpy as np
 import pandas as pd
 
-
-from SciProjects.fruits import projectroot
+from SciProjects.matt import projectroot
 
 category = ["EURODAT", "GYUM", "EV"]
-isotope = ["DH1", "DH2", "D13C"]
-volatile = ["METOH", "ACALD", "ETAC", "ACETAL", "2BUT",
-            "1PROP", "2M1P", "1BUT", "2M1B", "3M1B"]
-params_inc = ["D13C", "METOH", "ACALD", "ETAC", "ACETAL",
-              "1PROP", "2M1P", "2M1B", "3M1B"]
+params_inc = ["D13C", "log_ACALD", "log_ETAC", "log_ACETAL",
+              "log_1PROP", "log_2M1B", "log_3M1B"]
 
-data = pd.read_excel(projectroot + "Gyümölcs_adatbázis_összesített.xlsx", header=0)
+data = pd.read_excel(projectroot + "Param_szurt.xlsx", header=0)
 valid = data[category + params_inc].dropna()
 X = valid[params_inc]
 X = (X - X.mean()) / X.std()
@@ -26,7 +21,7 @@ for categ in ("Alma", "Kajszi", "Málna"):
     print(categ, "center:", center)
     ids = valid[valid["GYUM"] == categ][category].as_matrix()
     for ID, record in zip(ids, x):
-        d = norm(center - record)
+        d = np.linalg.norm(center - record)
         ds.append(ID.tolist() + [d])
 
 outchain = "\t".join(category + ["D"]) + "\n"
