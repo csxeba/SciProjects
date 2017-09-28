@@ -1,7 +1,7 @@
 import numpy as np
 
-from csxdata.utilities.vectorops import discard_lowNs
-from csxdata.utilities.parsers import parse_csv
+from csxdata.utilities.vectorop import drop_lowNs
+from csxdata.utilities.parser import parse_csv
 from csxdata.utilities.highlevel import plot, transform
 
 from SciProjects.sophie import projectroot
@@ -9,7 +9,7 @@ from SciProjects.sophie import projectroot
 
 def plot_projection(projection):
     nX = np.stack((X[:, 0], X[:, 1], Y_C), axis=1)
-    fX, fY = discard_lowNs(nX, country_codes)
+    fX, fY = drop_lowNs(nX, country_codes)
     fX, fY_C = fX[:, :2], fX[:, -1]
     tX = transform(fX, factors=1, get_model=False, method=projection, y=fY).ravel()
     plot(np.stack((fY_C, tX), axis=1), fY, axlabels=["Y", projection.upper()])

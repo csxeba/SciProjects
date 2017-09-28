@@ -1,7 +1,7 @@
 import numpy as np
 
-from csxdata.utilities.vectorops import (
-    split_by_categories, discard_NaN_rows
+from csxdata.utilities.vectorop import (
+    split_by_categories, dropna
 )
 
 from SciProjects.sophie import pull_data, projectroot
@@ -9,7 +9,7 @@ from SciProjects.sophie import pull_data, projectroot
 
 def assemble_X(pnm):
     param = globals()[pnm]
-    fP, fX, fY, flabel = discard_NaN_rows(param, X_C, Y_C, CCode)
+    fP, fX, fY, flabel = dropna(param, X_C, Y_C, CCode)
     split = split_by_categories(flabel, np.stack((fP, fX, fY), axis=1))
     data = ["\t".join(("GEO", pnm, "X", "Y"))]
     for label, array in split.items():

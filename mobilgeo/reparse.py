@@ -1,6 +1,6 @@
 import numpy as np
 
-from csxdata.utilities.vectorops import argfilter
+from csxdata.utilities.vectorop import argfilter
 from SciProjects.mobilgeo.geocoding.placetypes import *
 
 

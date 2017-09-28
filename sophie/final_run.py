@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 from sklearn.feature_selection import f_classif
 
-from csxdata.utilities.parsers import parse_csv
-from csxdata.utilities.vectorops import split_by_categories
+from csxdata.utilities.parser import parse_csv
+from csxdata.utilities.vectorop import split_by_categories
 from csxdata.utilities.highlevel import transform
 from csxdata.visual import Plotter2D
 

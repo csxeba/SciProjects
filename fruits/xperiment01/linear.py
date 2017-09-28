@@ -27,7 +27,7 @@ def svm():
         lX, lY = fruits.learning, fruits.lindeps
         tX, tY = fruits.testing, fruits.tindeps
         vX, vY = zsind.learning, zsind.lindeps
-        vX = fruits.transform(vX)
+        vX = fruits.transformation(vX)
         return lX, lY, tX, tY, vX, vY
 
     Xs, Ys, testX, testY, valX, valY = get_data()

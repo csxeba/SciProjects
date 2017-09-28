@@ -1,8 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from csxdata.utilities.parsers import parse_csv
-from csxdata.utilities.vectorops import discard_NaN_rows
+from csxdata.utilities.parser import parse_csv
+from csxdata.utilities.vectorop import dropna
 from csxdata.utilities.highlevel import plot
 
 from SciProjects.sophie import projectroot
@@ -16,7 +16,7 @@ countries = Y[:, 0]
 DHI, D13C = X.T
 
 plot(np.stack((y_coord, DHI), axis=1), countries, axlabels=["Y", "DHI"])
-plotme, c2 = discard_NaN_rows(np.stack((y_coord, D13C), axis=1), countries)
+plotme, c2 = dropna(np.stack((y_coord, D13C), axis=1), countries)
 plot(plotme, c2, ["Y", "D13C"])
 
 fig, axarr = plt.subplots(2)

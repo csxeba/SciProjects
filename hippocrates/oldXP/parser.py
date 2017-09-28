@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from csxdata import roots
-from csxdata.utilities.vectorops import standardize
+from csxdata.utilities.vectorop import standardize
 from csxdata.utilities.highlevel import image_sequence_to_array as pull_data
 from csxdata.utilities.highlevel import autoencode
 

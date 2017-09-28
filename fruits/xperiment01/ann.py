@@ -48,7 +48,7 @@ def full_training(validate=True, dump_weights=False):
 
     if validate:
         vx, vy = CData(zsindpath, zsindeps, cross_val=0.0, feature=TAXLEVEL)
-        vx = fruits.transform(vx)
+        vx = fruits.transformation(vx)
         vy = fruits.embed(vy)
         vacc = network.evaluate(vx, vy, batch_size=len(vy), verbose=0)[-1]
         probs = network.predict_proba(vx, verbose=0)
@@ -66,7 +66,7 @@ def run():
     testing = fruits.table("testing")
     zsind = CData(zsindpath, zsindeps, cross_val=0.0, feature=TAXLEVEL)
     vx, vy = zsind.learning, zsind.lindeps
-    vx = fruits.transform(vx)
+    vx = fruits.transformation(vx)
     vy = fruits.embed(vy)
 
     initc, initacc = network.evaluate(*testing, verbose=0)

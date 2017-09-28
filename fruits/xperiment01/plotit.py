@@ -1,6 +1,6 @@
 import numpy as np
 
-from csxdata.utilities.parsers import parse_csv
+from csxdata.utilities.parser import parse_csv
 from csxdata.utilities.highlevel import plot, transform
 
 from SciProjects.fruits import gyumpath, gyumindeps

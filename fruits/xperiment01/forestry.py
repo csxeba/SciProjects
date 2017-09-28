@@ -12,7 +12,7 @@ fruits = CData(gyumpath, gyumindeps, cross_val=0.2, feature=LABEL)
 fruits.transformation = ("lda", 5)
 
 zsind = CData(zsindpath, zsindeps, cross_val=0.0)
-valid = fruits.transform(zsind.learning, zsind.lindeps)
+valid = fruits.transformation(zsind.learning, zsind.lindeps)
 rf.fit(fruits.learning, fruits.lindeps)
 
 tpredict = rf.predict(fruits.testing)

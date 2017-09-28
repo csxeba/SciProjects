@@ -3,14 +3,14 @@ from scipy import stats
 from matplotlib import pyplot as plt
 
 from csxdata.visual import Plotter2D
-from csxdata.utilities.vectorops import discard_NaN_rows
+from csxdata.utilities.vectorop import dropna
 from csxdata.stats.inspection import category_frequencies
 
 from SciProjects.sophie import pull_data, axtitles
 
 X_C, Y_C, DHI, D13C, CCode = pull_data("04GEO_eu.csv")
 
-DHI, Y_C, CCode = discard_NaN_rows(DHI, Y_C, CCode)
+DHI, Y_C, CCode = dropna(DHI, Y_C, CCode)
 category_frequencies(CCode)
 R, p = stats.spearmanr(DHI, Y_C)
 

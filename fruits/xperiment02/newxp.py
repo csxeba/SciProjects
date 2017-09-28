@@ -1,6 +1,6 @@
 from numpy.linalg.linalg import LinAlgError as LErr
 
-from csxdata.utilities.parsers import parse_csv
+from csxdata.utilities.parser import parse_csv
 from csxdata.utilities.highlevel import plot, transform
 from csxdata.stats.inspection import category_frequencies
 

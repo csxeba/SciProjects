@@ -2,7 +2,7 @@ import numpy as np
 # from sklearn.svm import SVC
 
 from csxdata import roots
-from csxdata.utilities.parsers import parse_csv
+from csxdata.utilities.parser import parse_csv
 
 
 def pull_fruits_data(fruit):

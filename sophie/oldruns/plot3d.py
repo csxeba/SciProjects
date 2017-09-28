@@ -2,8 +2,8 @@ import numpy as np
 
 from csxdata.stats.inspection import category_frequencies
 from csxdata.utilities.highlevel import plot
-from csxdata.utilities.parsers import parse_csv
-from csxdata.utilities.vectorops import discard_lowNs, discard_NaN_rows
+from csxdata.utilities.parser import parse_csv
+from csxdata.utilities.vectorop import drop_lowNs, dropna
 
 from SciProjects.sophie import projectroot
 
@@ -14,6 +14,6 @@ y_coord = Y[:, -1].astype(float)
 categ = Y[:, 0]
 DHI, D13C = X.T
 plotme = np.stack((DHI, D13C, y_coord), axis=1)
-plotme, categ = discard_NaN_rows(plotme, categ)
+plotme, categ = dropna(plotme, categ)
 category_frequencies(categ)
 plot(plotme, axlabels=["DHI", "D13C", "Y"])

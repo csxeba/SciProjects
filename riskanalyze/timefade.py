@@ -6,7 +6,7 @@ from matplotlib import dates as mdates
 from shapefile import Reader
 
 from csxdata import roots
-from csxdata.utilities.vectorops import split_by_categories, featscale, downscale
+from csxdata.utilities.vectorop import split_by_categories, rescale, downscale
 
 from SciProjects.riskanalyze.utils import pull_data
 

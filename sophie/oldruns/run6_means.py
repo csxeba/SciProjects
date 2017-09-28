@@ -3,7 +3,7 @@ from scipy import stats
 
 from matplotlib import pyplot as plt
 
-from csxdata.utilities.vectorops import split_by_categories, discard_NaN_rows
+from csxdata.utilities.vectorop import split_by_categories, dropna
 
 from SciProjects.sophie import pull_data, axtitles
 
@@ -13,7 +13,7 @@ def split_by_CCode(param):
     new = {}
     for cat in bycat:
         catargs = bycat[cat]
-        fX, fCoord = discard_NaN_rows(param[catargs], Y_C[catargs])
+        fX, fCoord = dropna(param[catargs], Y_C[catargs])
         if not np.prod(fX.shape):
             continue
         new[cat] = [fX.mean(), fX.std(), fCoord.mean()]
@@ -22,7 +22,7 @@ def split_by_CCode(param):
 
 def correlate(pnm):
     param = globals()[pnm]
-    X, Y = discard_NaN_rows(param, Y_C)
+    X, Y = dropna(param, Y_C)
     return stats.spearmanr(X, Y)
 
 
