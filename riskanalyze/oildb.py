@@ -4,64 +4,74 @@ import pandas as pd
 from SciProjects.riskanalyze import projectroot
 
 
-def fails_on_density15(df, useR=True):
-    minimum = 820. - (0.5 if useR else 0.)
-    maximum = 845. + (0.5 if useR else 0.)
-    return np.logical_or(df["SŰR"] < minimum, df["SŰR"] > maximum)
+class Failer:
+
+    @staticmethod
+    def density15(df, useR=True):
+        minimum = 820. - (0.5 if useR else 0.)
+        maximum = 845. + (0.5 if useR else 0.)
+        return np.logical_or(df["SŰR"] < minimum, df["SŰR"] > maximum)
+
+    @staticmethod
+    def viscosity40(df, useR=True):
+        minimum = 2.
+        maximum = 4.5
+        if useR:
+            minimum -= 0.0082 * minimum * (minimum+1)
+            maximum += 0.0082 * maximum * (maximum+1)
+        return np.logical_or(df["VISZK"] < minimum, df["VISZK"] > maximum)
+
+    @staticmethod
+    def distillation250(df, useR=True):
+        maximum = 65. + (2.7 if useR else 0.)
+        return df["D250"] > maximum
+
+    @staticmethod
+    def distillation350(df, useR=True):
+        minimum = 85. - (2.7 if useR else 0.)
+        return df["D350"] < minimum
+
+    @staticmethod
+    def distillation95perc(df, useR=True):
+        maximum = 360.
+        if useR:
+            maximum += 0.04227 * (360. - 140.)
+        return df["95D"] > maximum
+
+    @staticmethod
+    def FAME(df, useR=True):
+        maximum = 7.
+        if useR:
+            maximum += 0.0793 * 7. + 0.0413
+        return df["FAME"] > maximum
+
+    @staticmethod
+    def sulphur(df):
+        return df["KÉN"] > 12.
+
+    @staticmethod
+    def lobp(df):
+        return df["LOBP"] < 53.
+
+    @staticmethod
+    def do_all(df):
+        boolmask = Failer.density15(df)
+        print(boolmask.sum(), "failed on density15")
+        for funcname in ("viscosity40", "distillation250",
+                         "distillation350", "distillation95perc",
+                         "FAME", "sulphur", "lobp"):
+            newmask = getattr(Failer, funcname)(df)
+            print(newmask.sum(), "failed on", funcname)
+            boolmask |= newmask
+        return boolmask
 
 
-def fails_on_viscosity40(df, useR=True):
-    minimum = 2.
-    maximum = 4.5
-    if useR:
-        minimum -= 0.0082 * minimum * (minimum+1)
-        maximum += 0.0082 * maximum * (maximum+1)
-    return np.logical_or(df["VISZK"] < minimum, df["VISZK"] > maximum)
+dpath = projectroot + "adat/OlajMinden.xlsx"
 
-
-def fails_on_distillation250(df, useR=True):
-    maximum = 65. + (2.7 if useR else 0.)
-    return df["250C"] > maximum
-
-
-def fails_on_distillation350(df, useR=True):
-    maximum = 85. + (2.7 if useR else 0.)
-    return df["350C"] > maximum
-
-
-def fails_on_distillation95perc(df, useR=True):
-    maximum = 360.
-    if useR:
-        maximum += 0.04227 * (360. - 140.)
-    return df["95DESZT"] > maximum
-
-
-def fails_on_FAME(df, useR=True):
-    maximum = 7.
-    if useR:
-        maximum += 0.0793 * 7. + 0.0413
-    return df["FAME"] > maximum
-
-
-def fails_on_sulphur(df):
-    return df["KÉN"] > 12.
-
-
-def fails_on_lobp(df):
-    return df["LOBP"] < 53.
-
-
-dpath = projectroot + "adat/UseMeOlaj.xlsx"
-
+print("Reading", dpath)
 data = pd.read_excel(dpath, header=0)
-data = data[~pd.isnull(data)]
+print(data.dtypes)
 
-mask = fails_on_density15(data)
-for func in (fails_on_distillation95perc, fails_on_distillation250, fails_on_lobp,
-             fails_on_distillation350, fails_on_FAME, fails_on_sulphur, fails_on_viscosity40):
-    print(f"RUNNING {func.__name__}")
-    mask = np.logical_or(mask, func(data))
+fail = Failer.do_all(data)
 
-fail = data[mask]
-
-print(f"FAILED: {len(fail)/len(data):.3%}")
+print(f"FAILED: {fail.sum()/len(data):.3%}")
