@@ -75,3 +75,5 @@ print(data.dtypes)
 fail = Failer.do_all(data)
 
 print(f"FAILED: {fail.sum()/len(data):.3%}")
+failerz = data[fail]  # type: pd.DataFrame
+failerz.to_excel(projectroot + "FAILZ.xlsx")
