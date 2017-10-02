@@ -13,7 +13,7 @@ print(df.dtypes)
 
 stocks = np.unique(df["Név"])
 
-dr = pd.date_range("2017-01-01", "2017-09-28")
+dr = pd.date_range("2015-01-01", "2017-09-28")
 
 output = np.zeros((len(dr), len(stocks)))
 
