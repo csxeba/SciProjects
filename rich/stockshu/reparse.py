@@ -1,7 +1,8 @@
+from datetime import datetime, timedelta
+from collections import deque
+
 import numpy as np
 import pandas as pd
-
-from csxdata.visual.progress import enumprogress
 
 from SciProjects.rich import projectroot
 
@@ -12,21 +13,35 @@ print(df.dtypes)
 
 stocks = np.unique(df["Név"])
 
-dr = pd.date_range("2015-01-01", "2017-09-28")
+dr = pd.date_range("2017-01-01", "2017-09-28")
 
-ndf = pd.DataFrame(
-    index=dr,
-    columns=["Date"] + sorted(stocks),
-)
+output = np.zeros((len(dr), len(stocks)))
 
-for stock in sorted(stocks):
-    print("Doing", stock)
+times = deque()
+ETA = 0.
 
-    for day in enumprogress(dr, prefix="Date: "):
+lstck = len(stocks)
+ldates = len(dr)
+lldates = len(str(ldates))
+globstart = datetime.now()
+for i, stock in enumerate(sorted(stocks)):
+
+    start = datetime.now()
+    print(f"Doing {i+1}/{lstck}: {stock})")
+    print(f"ETA: {ETA // 60} minutes, finish @ {globstart + timedelta(seconds=ETA)}")
+
+    for j, day in enumerate(dr):
+        print(f"\rDate: {j:>{lldates}}/{ldates}", end="")
         day_stimmt = df["Dátum"] == day
         name_stimmt = df["Név"] == stock
-        stimmt = df.loc[np.logical_and(day_stimmt, name_stimmt)]["Záróár"]
-        assert len(stimmt) <= 1, f"{stock} @ {day} N = {len(stimmt)}"
-        ndf[day, stock] = stimmt
+        stimmt = df.loc[np.logical_and(day_stimmt, name_stimmt)]["Záróár"]  # type: pd.Series
+        lns = len(stimmt)
+        assert lns <= 1, f"{stock} @ {day} N = {lns}"
+        output[j, i] = stimmt.as_matrix()[0] if lns else np.nan
 
-ndf.to_excel(projectroot + "Reparsed.xlsx")
+    print()
+    times.append((datetime.now() - start).seconds)
+    ETA = ((sum(times) / len(times)) * lstck)
+
+ndf = pd.DataFrame(output, index=dr, columns=sorted(stocks))
+ndf.to_excel(projectroot + "output.xlsx")
