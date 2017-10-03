@@ -9,7 +9,7 @@ def pull_and_preprocess_data(path):
 
 
 def animate():
-    data = pull_and_preprocess_data(dataroot + "/Sinem_T2.npa")
+    data = pull_and_preprocess_data(dataroot + "/Tumor_T2pos.npa")
     plt.ion()
     obj = plt.imshow(data[0, 0, :, :], vmin=0, vmax=255, cmap="hot")
     for tensor in data:
@@ -30,6 +30,7 @@ def create_frames():
             plt.savefig(outpath + f"frame.{i:0>3}.png")
             i += 1
             print(f"{i:>3}/{imax}")
+
 
 if __name__ == '__main__':
     animate()

@@ -7,9 +7,8 @@ dataroot = os.path.expanduser("~/SciProjects/Project_Hippocrates/data/sinem/")
 
 
 def pull_sequence_to_array(root):
-    arz = []
-    for fl in sorted(flnm for flnm in os.listdir(root) if flnm[-3:] == "bmp"):
-        arz.append(np.asarray(Image.open(root + "/" + fl))[..., 0][..., None].astype("uint8"))
+    arz = [np.asarray(Image.open(root + "/" + fl))[..., 0][..., None].astype("uint8")
+           for fl in sorted(flnm for flnm in os.listdir(root) if flnm[-3:] == "bmp")]
 
     if not arz:
         print("No pix!", end="")
