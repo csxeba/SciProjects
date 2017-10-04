@@ -20,7 +20,7 @@ def category_frequencies():
 
 
 def normality_tests(hist=True):
-    from csxdata.stats.normality import full
+    from csxdata.stats.normaltest import full
     full(X)
     if hist:
         from matplotlib import pyplot as plt

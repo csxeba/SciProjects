@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import mlab
 
-from csxdata.stats.normality import full
+from csxdata.stats.normaltest import full
 from SciProjects.fruits import projectroot
 
 

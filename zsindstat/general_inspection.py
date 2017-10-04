@@ -14,9 +14,9 @@ axlab_latex = (r"$(D/H)_I$", r"$\delta^{13}C$")
 
 
 def do_inspection():
-    from csxdata.stats import normality
+    from csxdata.stats import normaltest
     inspection.correlation(frame.learning, names=frame._header[-2:])
-    normality.full(frame)
+    normaltest.full(frame)
 
 
 def normality_boxwhisker(X, paramname):
