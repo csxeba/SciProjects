@@ -13,7 +13,7 @@ if __name__ == '__main__':
     data.transformation = "std"
     model = Boost(GaussianNB(), n_estimators=100)
 
-    model.fit(data.learning, data.lindeps)
-    preds = model.predict(data.testing)
+    model.fit(data._learning, data.lindeps)
+    preds = model.predict(data._testing)
     eq = [left == right for left, right in zip(preds, data.tindeps)]
     print("Acc:", sum(eq) / len(eq))

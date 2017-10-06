@@ -10,7 +10,7 @@ EQUALS = None
 
 grapes = CData(*paths["grapes"], cross_val=0, lower=True,
                feature=FEATURE, filterby=WHERE, selection=EQUALS)
-X, Y = (grapes.learning, grapes.lindeps)
+X, Y = (grapes._learning, grapes.lindeps)
 names = ["DH1", "DH2", "D13C"]
 
 

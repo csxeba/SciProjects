@@ -65,7 +65,7 @@ def run():
 
     testing = fruits.table("testing")
     zsind = CData(zsindpath, zsindeps, cross_val=0.0, feature=TAXLEVEL)
-    vx, vy = zsind.learning, zsind.lindeps
+    vx, vy = zsind._learning, zsind.lindeps
     vx = fruits.transform(vx)
     vy = fruits.embed(vy)
 

@@ -12,10 +12,10 @@ fruits = CData(gyumpath, gyumindeps, cross_val=0.2, feature=LABEL)
 fruits.transformation = ("lda", 5)
 
 zsind = CData(zsindpath, zsindeps, cross_val=0.0)
-valid = fruits.transform(zsind.learning, zsind.lindeps)
-rf.fit(fruits.learning, fruits.lindeps)
+valid = fruits.transform(zsind._learning, zsind.lindeps)
+rf.fit(fruits._learning, fruits.lindeps)
 
-tpredict = rf.predict(fruits.testing)
+tpredict = rf.predict(fruits._testing)
 vpredict = rf.predict(valid[0])
 tacc = [right == left for right, left in zip(tpredict, fruits.tindeps)]
 vacc = [right == left for right, left in zip(vpredict, valid[1])]

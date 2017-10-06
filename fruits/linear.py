@@ -24,9 +24,9 @@ def svm():
         fruits.transformation = (AFTER_TREATMENT, TRANSFORM_PARAM)
         zsind = CData(zsindpath, zsindeps, feature=TAXLEVEL, cross_val=0,
                       transformation=None, param=None)
-        lX, lY = fruits.learning, fruits.lindeps
-        tX, tY = fruits.testing, fruits.tindeps
-        vX, vY = zsind.learning, zsind.lindeps
+        lX, lY = fruits._learning, fruits.lindeps
+        tX, tY = fruits._testing, fruits.tindeps
+        vX, vY = zsind._learning, zsind.lindeps
         vX = fruits.transform(vX)
         return lX, lY, tX, tY, vX, vY
 

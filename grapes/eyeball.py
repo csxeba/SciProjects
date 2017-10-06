@@ -5,7 +5,7 @@ from SciProjects.generic import paths
 FEATURE = "evjarat"
 
 grapes = CData(*paths["grapes"], feature=FEATURE, cross_val=0, lower=True)
-X, Y = grapes.learning, grapes.lindeps
+X, Y = grapes._learning, grapes.lindeps
 
 
 def plot_raw():
