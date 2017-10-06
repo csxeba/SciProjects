@@ -1,13 +1,7 @@
 import numpy as np
 
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Conv1D, MaxPool1D, Activation, BatchNormalization
-
-
-def pull_data(rescale=True):
-    from SciProjects.rich.stockshu.data_util import pull_data as _pd
-    stocks, header = _pd(rescale)
-    return stocks
+from keras.layers import LSTM, Dense, Conv1D, Activation, BatchNormalization, Flatten
 
 
 def data_stream(raw, timestep=7, batch_size=32):
@@ -29,10 +23,8 @@ def validation_data(raw, timestep=7, m=100):
 
 def build_LSTM(inputs, outputs):
     model = Sequential(layers=[
-        LSTM(120, activation="relu", input_shape=inputs),
-        BatchNormalization(),
-        Dense(30, activation="relu"),
-        BatchNormalization(),
+        LSTM(120, activation="relu", input_shape=inputs), BatchNormalization(),
+        Dense(30, activation="relu"), BatchNormalization(),
         Dense(outputs[0], activation="linear")
     ])
     model.compile(optimizer="adam", loss="mse")
@@ -41,16 +33,24 @@ def build_LSTM(inputs, outputs):
 
 def build_CNN(inputs, outputs):
     model = Sequential(layers=[
-        Conv1D(30, kernel_size=3), MaxPool1D(), Activation("relu"), BatchNormalization()
+        BatchNormalization(input_shape=inputs),
+        Conv1D(30, kernel_size=3), Activation("relu"), BatchNormalization(),
+        Conv1D(30, kernel_size=3), Activation("relu"), BatchNormalization(),
+        Conv1D(outputs[0], kernel_size=3),
+        Activation("linear"),
+        Flatten(),
     ])
+    model.compile(optimizer="adam", loss="mse")
+    return model
 
 
 def xperiment():
-    raw = pull_data()
-    N, D = raw.shape
-    Xstream = data_stream(raw, timestep=7, batch_size=32)
-    net = build_LSTM([7, D], [D])
-    net.fit_generator(Xstream, steps_per_epoch=(N*10)//32, epochs=10)
+    learnX, validX = pull_data()
+    N, D = learnX.shape
+    Xstream = data_stream(learnX, timestep=7, batch_size=32)
+    valid = validation_data(validX)
+    net = build_CNN([7, D], [D])
+    net.fit_generator(Xstream, steps_per_epoch=(N*100)//32, epochs=10., validation_data=valid)
 
 
 if __name__ == '__main__':
