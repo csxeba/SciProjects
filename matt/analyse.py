@@ -4,6 +4,9 @@ from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 
 from csxdata.visual.scatter import Scatter2D
+from csxdata.visual.histogram import fullplot
+from csxdata.stats.normaltest import full
+from csxdata.stats.inspection import correlation
 
 from SciProjects.matt import projectroot
 
@@ -15,27 +18,26 @@ def plotdata(lX, Y, title):
     plt.show()
 
 
-df = pd.read_excel(projectroot + "adat.xlsx")
+def transformplot():
+    pca = PCA(n_components=2)
+    lda = LDA(n_components=2)
+    pcaX = pca.fit_transform(X)
+    ldaX = lda.fit_transform(X, Y)
+    pca_title = f"PCA\nTotal explained variance: {pca.explained_variance_ratio_.sum():.2%}"
+    lda_title = f"LDA\nTotal explained variance: {lda.explained_variance_ratio_.sum():.2%}"
+    plotdata(pcaX, Y, pca_title)
+    plotdata(ldaX, Y, lda_title)
 
-X, Y = df.iloc[:, 1:].as_matrix(), df["GYUM"].as_matrix()
 
-pca = PCA(n_components=2)
-lda = LDA(n_components=2)
+def normality():
+    paramnames = df.columns[1:]
+    full(X, names=paramnames)
+    for i, colname in enumerate(paramnames):
+        fullplot(X[:, i], colname, histbins=7)
+    correlation(X, paramnames)
 
-pcaX = pca.fit_transform(X)
-ldaX = lda.fit_transform(X, Y)
 
-pca_title = f"PCA\nTotal explained variance: {pca.explained_variance_ratio_.sum():.2%}"
-lda_title = f"LDA\nTotal explained variance: {lda.explained_variance_ratio_.sum():.2%}"
-
-plotdata(pcaX, Y, pca_title)
-plotdata(ldaX, Y, lda_title)
-
-# x = X.dropna().as_matrix()
-#
-# full(x, names=X.columns)
-# for colname in X:
-#     fullplot(X[colname].dropna().as_matrix(), colname, histbins=7)
-#
-# stats.correlation(X.dropna().as_matrix(), X.columns)
-
+if __name__ == '__main__':
+    df = pd.read_excel(projectroot + "adat.xlsx", header=0)
+    X, Y = df.iloc[:, 1:].as_matrix(), df["GYUM"].as_matrix()
+    normality()
