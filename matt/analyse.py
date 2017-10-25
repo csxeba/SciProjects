@@ -11,10 +11,11 @@ from csxdata.stats.inspection import correlation
 from SciProjects.matt import projectroot
 
 
-def plotdata(lX, Y, title):
+def plotdata(lX, Y, title, method):
     plotter = Scatter2D(lX, Y, title=title, axlabels=["F01", "F02"])
     plotter.split_scatter()
     plt.legend()
+    plt.savefig(f"{projectroot}N27.Results/{method}_plot.png")
     plt.show()
 
 
@@ -25,19 +26,20 @@ def transformplot():
     ldaX = lda.fit_transform(X, Y)
     pca_title = f"PCA\nTotal explained variance: {pca.explained_variance_ratio_.sum():.2%}"
     lda_title = f"LDA\nTotal explained variance: {lda.explained_variance_ratio_.sum():.2%}"
-    plotdata(pcaX, Y, pca_title)
-    plotdata(ldaX, Y, lda_title)
+    plotdata(pcaX, Y, pca_title, "PCA")
+    plotdata(ldaX, Y, lda_title, "LDA")
 
 
 def normality():
     paramnames = df.columns[1:]
     full(X, names=paramnames)
     for i, colname in enumerate(paramnames):
-        fullplot(X[:, i], colname, histbins=7)
+        outpath = f"{projectroot}N27.Results/{colname}.png"
+        fullplot(X[:, i], colname, histbins=7, show=False, dumppath=outpath)
     correlation(X, paramnames)
 
 
 if __name__ == '__main__':
     df = pd.read_excel(projectroot + "adat.xlsx", header=0)
     X, Y = df.iloc[:, 1:].as_matrix(), df["GYUM"].as_matrix()
-    normality()
+    transformplot()
