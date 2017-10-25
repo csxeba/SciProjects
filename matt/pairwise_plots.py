@@ -10,7 +10,7 @@ from SciProjects.matt import projectroot
 
 
 def plotsingle(ax, X1, X2, Y, name1, name2, coord):
-    color = {"Alma": "red", "Kajszi": "orange", "Málna": "magenta"}
+    color = {"Alma": "red", "Kajszi": "orange   ", "Málna": "magenta"}
     args = split_by_categories(Y)
     for cat in np.unique(Y):
         ax.scatter(X1[args[cat]], X2[args[cat]], marker=".", color=color[cat])
