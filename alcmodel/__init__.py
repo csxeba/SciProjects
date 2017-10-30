@@ -53,6 +53,9 @@ class Converter:
     def convert(self, points):
         return self.model(points)
 
+    def to_absalc(self, vperc, X):
+        return (X * self.model(vperc)[:, None] * 10.) / vperc[:, None]
+
     def plot(self, model=None):
         model = self.model if model is None else model
         X, Y = self.data["VV"], self.data["DENSE"]

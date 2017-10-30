@@ -3,6 +3,8 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Conv1D, Activation, BatchNormalization, Flatten
 
+from SciProjects.rich.stockshu.data_util import pull_data
+
 
 def data_stream(raw, timestep=7, batch_size=32):
     N = len(raw)
@@ -45,9 +47,10 @@ def build_CNN(inputs, outputs):
 
 
 def xperiment():
-    learnX, validX = pull_data()
-    N, D = learnX.shape
-    Xstream = data_stream(learnX, timestep=7, batch_size=32)
+    rawX, columns = pull_data()
+    validX = validation_data(rawX)
+    N, D = rawX.shape
+    Xstream = data_stream(rawX, timestep=7, batch_size=32)
     valid = validation_data(validX)
     net = build_CNN([7, D], [D])
     net.fit_generator(Xstream, steps_per_epoch=(N*100)//32, epochs=10., validation_data=valid)
