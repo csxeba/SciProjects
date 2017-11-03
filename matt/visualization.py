@@ -35,11 +35,13 @@ def normality():
     full(X, names=paramnames)
     for i, colname in enumerate(paramnames):
         outpath = f"{projectroot}N27.Results/{colname}.png"
-        fullplot(X[:, i], colname, histbins=7, show=False, dumppath=outpath)
+        fullplot(X[:, i], colname, histbins=7, show=False, dumppath=outpath,
+                 histlabels=(r"$\delta^{13}C$ izotóparány", "Előfordulási valószínűség"),
+                 problabels=("Elméleti Z-érték", r"$\delta^{13}C$ izotóparány"))
     correlation(X, paramnames)
 
 
 if __name__ == '__main__':
     df = pd.read_excel(projectroot + "adat.xlsx", header=0)
     X, Y = df.iloc[:, 1:].as_matrix(), df["GYUM"].as_matrix()
-    transformplot()
+    normality()

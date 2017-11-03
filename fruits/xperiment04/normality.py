@@ -10,7 +10,7 @@ from SciProjects.fruits import projectroot
 df = pd.read_excel(projectroot + "convert.xlsx")
 print(df.dtypes)
 
-normaltest.full(df.iloc[:, 19:].as_matrix(), names=df.columns[7:])
+normaltest.full(df.iloc[:, 19:].as_matrix(), names=df.columns[19:])
 
 for param in df.columns[19:]:
     fullplot(df[param].as_matrix(), param)
