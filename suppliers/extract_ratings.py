@@ -12,7 +12,7 @@ def extract_header(ws: Sheet):
 
 
 def extract_ratings(wb, sheet):
-    df = pd.read_excel(wb, engine="xlrd", sheetname=sheet, header=2, skiprows=[0, 1])  # type: pd.DataFrame
+    df = pd.read_excel(wb, engine="xlrd", sheetname=sheet, header=1, skiprows=1)  # type: pd.DataFrame
     return df.iloc[:, :6].dropna().as_matrix()
 
 

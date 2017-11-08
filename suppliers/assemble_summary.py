@@ -5,9 +5,10 @@ from SciProjects.suppliers import projectroot, resourceroot
 
 def pull_ratings():
 
+    sups = pd.read_excel(resourceroot + "suppliers.xlsx")["SUPPLIER"].as_matrix()
+
     def do1(filename, mode):
         frame = pd.read_excel(projectroot + filename)
-        sups = pd.read_excel(resourceroot + "suppliers.xlsx")["SUPPLIER"].as_matrix()
         labels = ("N", "MIN", "IDŐ", "ÁR", "KAPCS", "TYAKM")
         data = {mode+l: [] for l in labels}
         for sup in sups:

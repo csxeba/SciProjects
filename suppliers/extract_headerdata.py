@@ -50,14 +50,14 @@ def _reparse_mno(value):
 
 
 def extract_wb(wb: xl.Book):
-    df = pd.read_excel(wb, engine="xlrd", header=None, skiprows=4, names=col)
+    df = pd.read_excel(wb, sheetname="Cégek", engine="xlrd", header=None, skiprows=4, names=col)
     ix = df["CÉG"]
     boolmat = df.loc[:, "MBESZ":].as_matrix().astype(str)
     boolmat[boolmat == "nan"] = "0"
     boolmat[boolmat != "0"] = "1"
     boolmat = boolmat.astype(int).astype(bool)
     methmat = df.loc[:, ("NAKKR", "AKKR")].as_matrix().astype(str)
-    valid = boolmat.sum(axis=1).astype(bool) & (methmat[:, 0] != "nan")
+    valid = boolmat.sum(axis=1).astype(bool) | (methmat.iloc[:, 0] != "nan") | (methmat.iloc[:, 1] != "nan")
     IDs = [[], []]
     for na, a in methmat[valid]:
         IDs[0].append(_reparse_mno(na))
@@ -80,6 +80,8 @@ for xlfl in os.listdir(rawroot):
     wb = xl.open_workbook(rawroot + xlfl)
     sups = extract_wb(wb)
     for supname, supobj in sups.items():
+        if supname == "LGC":
+            supname = "LGC Standards"
         suppliers[supname].incorporate(supobj)
 
 outchain = "\t".join(col) + "\n"
