@@ -2,11 +2,11 @@ import numpy as np
 # from sklearn.svm import SVC
 
 from csxdata import roots
-from csxdata.utilities.parser import parse_csv
+from csxdata.parser import parser
 
 
 def pull_fruits_data(fruit):
-    X, Y, head = parse_csv(roots["csvs"] + "kozma.csv", indeps=4, filterby="Species", selection=fruit)
+    X, Y, head = parser.csv(roots["csvs"] + "kozma.csv", indeps=4, filterby="Species", selection=fruit)
     return X[:, (0, 2)]
 
 
