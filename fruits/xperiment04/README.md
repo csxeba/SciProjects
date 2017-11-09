@@ -1,0 +1,1 @@
+Adott $\Nu_1$ normál eloszlás.

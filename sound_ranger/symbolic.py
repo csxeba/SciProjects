@@ -29,7 +29,7 @@ def solve_eq_for_theta(R_equation):
 
 def solve_the_other_equation(the_other_equation, old_theta, theta_expressed):
     """
-    Does not work :( IDK how simpy operates,
+    Does not work :( IDK how sympy operates,
     so please use the concrete implementation!
     """
     substituted = simplify(the_other_equation.subs(old_theta, theta_expressed))
