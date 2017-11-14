@@ -51,9 +51,14 @@ class Converter:
         return Converter._fit_curve(X, Y, deg)
 
     def convert(self, points):
-        return self.model(points)
+        X = points.as_matrix() if isinstance(points, pd.DataFrame) else points
+        return self.model(X)
 
     def to_absalc(self, vperc, X):
+        if not isinstance(vperc, np.ndarray):
+            vperc = vperc.as_matrix().ravel()
+        if not isinstance(X, np.ndarray):
+            X = X.as_matrix()
         return (X * self.model(vperc)[:, None] * 10.) / vperc[:, None]
 
     def plot(self, model=None):

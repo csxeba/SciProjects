@@ -1,17 +1,15 @@
-import pandas as pd
-
 from sklearn.discriminant_analysis import (
     LinearDiscriminantAnalysis as LDA
 )
 
 from csxdata.visual.scatter import Scatter3D
 
-from SciProjects.fruits import projectroot
+from SciProjects.fruits.fruitframe import FruitData
 
 
 def main():
-    df = pd.read_excel(projectroot + "convert.xlsx")
-    X, Y = df.loc[:, "ACALD":], df["GYUM"]
+    df = FruitData(transform=True)
+    X, Y = df.volatile, df["FAMILIA"]
     lda = LDA(n_components=3).fit(X, Y)
     print("Expained variances:", lda.explained_variance_ratio_)
     lX = lda.transform(X)

@@ -1,8 +1,5 @@
 import numpy as np
 
-from SciProjects.mixtures import projectroot
-
-
 """
 Finding most probable mixture ratio of a sample by optimization
 """

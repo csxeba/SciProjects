@@ -1,17 +1,13 @@
-import pandas as pd
-
 from csxdata.stats import correlation
 from csxdata.stats import normaltest
 from csxdata.visual.histogram import fullplot
 
-from SciProjects.fruits import projectroot
+from SciProjects.fruits.fruitframe import FruitData
 
 
-df = pd.read_excel(projectroot + "convert.xlsx")
-print(df.dtypes)
-
-normaltest.full(df.iloc[:, 19:].as_matrix(), names=df.columns[19:])
-
-for param in df.columns[19:]:
-    fullplot(df[param].as_matrix(), param)
-correlation(df.iloc[:, 19:].as_matrix(), df.columns[19:])
+frame = FruitData(transform=True)
+X = frame.volatile
+correlation(X, names=X.columns)
+normaltest.full(X, names=X.columns)
+for col in X:
+    fullplot(X[col], paramname=col)
