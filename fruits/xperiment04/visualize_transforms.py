@@ -1,14 +1,17 @@
 from csxdata.visual.scatter import Scatter3D
 
-from sklearn.decomposition import PCA, KernelPCA, FastICA, FactorAnalysis
+from sklearn.decomposition import PCA, KernelPCA, FastICA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.manifold import SpectralEmbedding
 
 from SciProjects.fruits.fruitframe import FruitData
 
 
 def transform(X, trname, y=None):
     model = {"pca": PCA(whiten=True), "ica": FastICA(whiten=True),
-             "kpca": KernelPCA(kernel="rbf"), "lda": LDA(), "fa": FactorAnalysis()
+             "rbf pca": KernelPCA(kernel="rbf"), "lda": LDA(),
+             "poly pca": KernelPCA(kernel="poly", degree=2),
+             "se": SpectralEmbedding(n_components=3, n_jobs=4)
              }[trname.lower()]
     return model.fit_transform(X, y)[:, :3]
 
@@ -24,4 +27,4 @@ def plot_transform(trname, feature):
 
 
 if __name__ == "__main__":
-    plot_transform("fa", "FAMILIA")
+    plot_transform("poly pca", "FAMILIA")
