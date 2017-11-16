@@ -20,10 +20,7 @@ class Converter:
 
     @staticmethod
     def _fit_curve(X, Y, deg):
-        curve = np.poly1d(np.polyfit(X, Y, deg=deg))
-        R = np.corrcoef(Y, curve(X))[0][1]
-        print(f"Fitted {deg} degree LS curve with R2 = {R**2}")
-        return curve
+        return np.poly1d(np.polyfit(X, Y, deg=deg))
 
     @staticmethod
     def _plot_curves(X, Y, model, labels=None):

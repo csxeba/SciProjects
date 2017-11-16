@@ -4,22 +4,37 @@ import numpy as np
 from csxdata import roots
 from csxdata.parser import parser
 
+from SciProjects.fruits.fruitframe import FruitData
+
 
 def pull_fruits_data(fruit):
+    df = FruitData(transform=False)
+    return df.loc[df["GYUM"] == fruit, ("DH1", "D13C")].as_matrix()
+
+
+def pull_fruits_data_old(fruit):
     X, Y, head = parser.csv(roots["csvs"] + "kozma.csv", indeps=4, filterby="Species", selection=fruit)
     return X[:, (0, 2)]
 
 
-def maize_parameters():
-    means = np.array([110.8, -10.3])
-    covar = np.array([
-        [2.81, -0.17],
-        [-0.17, 0.67]])
+def sugar_parameters(what="maize"):
+    if what == "maize":
+        means = np.array([110.8, -10.3])
+        covar = np.array([
+            [2.81, -0.17],
+            [-0.17, 0.67]])
+    elif what == "beet":
+        means = np.array([92.38, -27.47])
+        covar = np.array([
+            [1.13, 0.32],
+            [0.32, 0.4]])
+    else:
+        raise ValueError("No such sugar in database: " + what)
     return means, covar
 
 
 def fake_maize_data(N=100):
-    means, covar = maize_parameters()
+    means, covar = sugar_parameters()
     return np.random.multivariate_normal(means, covar, size=(N,))
 
 
@@ -36,7 +51,7 @@ def get_sample_xs_rasberries(average=True):
      "TA50": ("Alma",
               (103.28,), (-20.06,)),
      "TA30": ("Alma",
-              (101.36,), (-23.31,))
+              (101.36,), (-23.31,)),
     }
     if average:
         return {smpname: (spec, np.mean(dh1), np.mean(d13c))
@@ -65,7 +80,10 @@ def get_sample_xs(average=True):
      "TA50": ("Alma",
               (103.28,), (-20.06,)),
      "TA30": ("Alma",
-              (101.36,), (-23.31,))
+              (101.36,), (-23.31,)),
+     "17090055": ("Kajszi",
+                  (95.73,), (-25.89,))
+
     }
     if average:
         return {smpname: (spec, np.mean(dh1), np.mean(d13c))
@@ -167,12 +185,12 @@ def xperiment_twoclass_svm():
         print("{}    {:.2%}    {:.2%}    {:>10}".format(smplnm, probs[0], probs[1], pred[0]))
 
 
-def xperiment_euclidean_distance():
+def xperiment_euclidean_distance(sugar="maize"):
 
     def euclidean(sample, reference):
         return np.sqrt((sample - reference)**2).sum()
 
-    maize_center = maize_parameters()[0]
+    maize_center = sugar_parameters(sugar)[0]
     samples = get_sample_xs()
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
@@ -183,10 +201,10 @@ def xperiment_euclidean_distance():
         d1 = euclidean(s, fruit_center)
         d2 = euclidean(s, maize_center)
 
-        print("{} ({}) maize content: {:>.4%}".format(smplnm, species, (d1 / (d1+d2))))
+        print(f"{smplnm} ({species}) {sugar} content: {d1 / (d1+d2):>.4%}")
 
 
-def xperiment_mahalanobis_distance():
+def xperiment_mahalanobis_distance(sugar="maize"):
 
     def mahal(p1, m2, cov2):
         dif = p1 - m2
@@ -196,7 +214,7 @@ def xperiment_mahalanobis_distance():
         c = np.sqrt(b)
         return c
 
-    mmean, mcov = maize_parameters()
+    mmean, mcov = sugar_parameters(sugar)
     samples = get_sample_xs()
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
@@ -209,11 +227,11 @@ def xperiment_mahalanobis_distance():
         d1 = mahal(s, fmean, fcov)
         d2 = mahal(s, mmean, mcov)
 
-        print("{} ({}) maize content: {:>.4%}".format(smplnm, species, (d1 / (d1+d2))))
+        print(f"{smplnm} ({species}) {sugar} content: {d1 / (d1+d2):>.4%}")
 
 
-def xperiment_codename_tunneling():
-    maize_param = maize_parameters()
+def xperiment_codename_tunneling(sugar="maize"):
+    maize_param = sugar_parameters(sugar)
     maize_means, maize_sdevs = maize_param[0], np.sqrt(np.diagonal(maize_param[1]))
     samples = get_sample_xs(average=True)
     norm = np.linalg.norm
@@ -227,11 +245,11 @@ def xperiment_codename_tunneling():
         enum = sample @ line
         denom = norm(line)
         proj = enum / denom
-        print("{} ({}) maize content: {:>.2%}".format(smplnm, species, proj / norm(line)))
+        print(f"{smplnm} ({species}) {sugar} content: {proj / norm(line):>.2%}")
 
 
 def xperiment_codename_tunneling2():
-    mmean, mcov = maize_parameters()
+    mmean, mcov = sugar_parameters()
     mellipse = ellipse_params(mcov)
     samples = get_sample_xs(True)
     norm = np.linalg.norm
@@ -265,13 +283,13 @@ def xperiment_codename_tunneling2():
 if __name__ == '__main__':
     print("Euklideszi távolság")
     print("-------------------")
-    xperiment_euclidean_distance()
+    xperiment_euclidean_distance("beet")
     print("\nMahalanobis távolság")
     print("--------------------")
-    xperiment_mahalanobis_distance()
+    xperiment_mahalanobis_distance("beet")
     print("\nGeometriai, átlagokból")
     print("----------------------")
-    xperiment_codename_tunneling()
-    print("\nGeometriai, 95% interszekciótól")
-    print("-------------------------------")
-    xperiment_codename_tunneling2()
+    xperiment_codename_tunneling("beet")
+    # print("\nGeometriai, 95% interszekciótól")
+    # print("-------------------------------")
+    # xperiment_codename_tunneling2()
