@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from ..utility import Container
 from ..alcmodel import Converter
 from . import projectroot
 
@@ -30,14 +31,6 @@ class FruitData:
         self.iloc = self.valid.iloc
 
     @property
-    def X(self):
-        return self.valid[self._independent]
-
-    @property
-    def Y(self):
-        return self.valid[self._dependent]
-
-    @property
     def isotope(self):
         return self.valid[self._isotope]
 
@@ -58,8 +51,8 @@ class FruitData:
         labels = self.raw[self._dependent]
         isotope = self.raw[self._isotope]  # type: pd.DataFrame
         ethanol = self.raw[self._etoh]
-        volatile = self.raw[self._volatile]
-        volatile["AMYL"] = volatile["2M1B"] + volatile["3M1B"]
+        volatile = self.raw[self._volatile]  # type: pd.DataFrame
+        volatile = volatile.assign(AMYL=(volatile["2M1B"] + volatile["3M1B"]).values)
         del volatile["2M1B"], volatile["3M1B"]
         cast = self.density_model.to_absalc(ethanol, volatile)
         aavol = pd.DataFrame(data=cast, index=volatile.index, columns=self._simplevol)
@@ -80,3 +73,29 @@ class FruitData:
 
     def __getitem__(self, item):
         return self.valid[item]
+
+
+class EtOH(Container):
+
+    fruitdata = FruitData(transform=False)
+
+    @classmethod
+    def sugar(cls, what):
+        if what == "Maize":
+            means = np.array([110.8, -10.3])
+            covar = np.array([
+                [2.81, -0.17],
+                [-0.17, 0.67]])
+        elif what == "Beet":
+            means = np.array([92.38, -27.47])
+            covar = np.array([
+                [1.13, 0.32],
+                [0.32, 0.4]])
+        else:
+            raise ValueError("No such sugar in database: " + what)
+        return cls(ID=what, species=what, mean=means, cov=covar)
+
+    @classmethod
+    def fruit(cls, what):
+        raw = cls.fruitdata.loc[cls.fruitdata["GYUM"] == what, ("DH1", "D13C")].as_matrix()
+        return cls(ID=what, species=what, mean=raw.mean(axis=0), cov=np.cov(raw.T))

@@ -1,20 +1,7 @@
 import numpy as np
-# from sklearn.svm import SVC
+from sklearn.svm import SVC
 
-from csxdata import roots
-from csxdata.parser import parser
-
-from SciProjects.fruits.fruitframe import FruitData
-
-
-def pull_fruits_data(fruit):
-    df = FruitData(transform=False)
-    return df.loc[df["GYUM"] == fruit, ("DH1", "D13C")].as_matrix()
-
-
-def pull_fruits_data_old(fruit):
-    X, Y, head = parser.csv(roots["csvs"] + "kozma.csv", indeps=4, filterby="Species", selection=fruit)
-    return X[:, (0, 2)]
+from SciProjects.fruits.fruitframe import FruitData, EtOH
 
 
 def sugar_parameters(what="maize"):
@@ -124,8 +111,8 @@ def intersect(ellipse, vector, right=True):
     return -isct
 
 
-def display(xycov1, xycov2, p1, p2, species, smplnm, smpl=None, skiprot=False,
-            ellipse_sigma=2, dump=True):
+def display(xycov1, xycov2, p1, p2, species, smplnm, refname,
+            smpl=None, skiprot=False, ellipse_sigma=2):
     from matplotlib import pyplot as plt
     from matplotlib.patches import Ellipse
 
@@ -134,22 +121,23 @@ def display(xycov1, xycov2, p1, p2, species, smplnm, smpl=None, skiprot=False,
         if skiprot:
             theta = 0.
         xy = params[:2]
-        return Ellipse(xy, a * 2, b * 2, theta)
+        e = Ellipse(xy, a*2, b*2, theta)
+        e.set_edgecolor("black")
+        e.set_facecolor("none")
+        return e
 
     ax = plt.gca()
 
     ell1, ell2 = toellipse(xycov1), toellipse(xycov2)
-    ell1.set_facecolor("none")
-    ell2.set_facecolor("none")
     ax.add_artist(ell1)
     ax.add_artist(ell2)
-    _time_scatter([xycov1[0], xycov2[0]], [xycov1[1], xycov2[1]],
-                     color="blue")
-    _time_scatter(*p1, marker="o", color="green")
-    _time_scatter(*p2, marker="o", color="blue")
-    _time_scatter([p1[0], p2[0]], [p1[1], p2[1]], linestyle="--", color="black")
+    ax.plot([xycov1[0], xycov2[0]], [xycov1[1], xycov2[1]],
+            color="blue")
+    ax.plot(*p1, marker="o", color="green")
+    ax.plot(*p2, marker="o", color="blue")
+    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], linestyle="--", color="black")
     if smpl is not None:
-        _time_scatter(*smpl, marker="o", color="red")
+        ax.plot(*smpl, marker="o", color="red")
     eps = 0
     ax.set_xlim([min(ell1.center[0]-ell1.width-eps, ell2.center[0]-ell2.width-eps),
                 max(ell1.center[0]+ell1.width+eps, ell2.center[0]+ell2.width+eps)])
@@ -158,9 +146,8 @@ def display(xycov1, xycov2, p1, p2, species, smplnm, smpl=None, skiprot=False,
     ax.set_xlabel("$D/H_I$")
     ax.set_ylabel(r"$\delta^{13}C$")
 
-    plt.title("{} ({}) vs. Kukorica".format(smplnm, species), y=1.05)
-    if dump:
-        plt.savefig("/home/csa/tmp/alkpics/{}.png".format(smplnm), bbox_inches="tight")
+    plt.title(f"{smplnm} ({species}) vs. {refname}", y=1.05)
+    plt.show()
     plt.close()
 
 
@@ -171,7 +158,7 @@ def xperiment_twoclass_svm():
     samples = get_sample_xs()
     for i, smplnm in enumerate(sorted(samples)):
         species, dh1, d13c = samples[smplnm]
-        fruit = pull_fruits_data(species)
+        fruit = FruitData().isotope[["DH1", "D13C"]].as_matrix()
 
         X = np.concatenate((fruit, maize))
         Y = np.array([species]*len(fruit) + ["Kukorica"]*len(maize))
@@ -248,25 +235,25 @@ def xperiment_codename_tunneling(sugar="maize"):
         print(f"{smplnm} ({species}) {sugar} content: {proj / norm(line):>.2%}")
 
 
-def xperiment_codename_tunneling2():
-    mmean, mcov = sugar_parameters()
-    mellipse = ellipse_params(mcov)
+def xperiment_codename_tunneling2(sugar="maize"):
+    sugar_mean, sugar_cov = sugar_parameters(sugar)
+    sugar_ell = ellipse_params(sugar_cov)
     samples = get_sample_xs(True)
     norm = np.linalg.norm
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
         fruit = pull_fruits_data(species)
-        fmean = fruit.mean(axis=0) + np.array([0.6, 0.6])
-        fcov = np.cov(fruit.T)
-        fellipse = ellipse_params(fcov)
-        v = mmean - fmean
-        mv = rotate(v, mellipse[-1], ccv=False)
-        fv = rotate(v, fellipse[-1], ccv=False)
-        mellipse_right = float(mmean[0]) > float(fmean[0])
-        pre_mp = intersect(mellipse[:2], mv, right=(not mellipse_right))
-        pre_fp = intersect(fellipse[:2], fv, right=mellipse_right)
-        mp = mmean + rotate(pre_mp, mellipse[-1])
-        fp = fmean + rotate(pre_fp, fellipse[-1])
+        fruit_mean = fruit.mean(axis=0) + np.array([0.6, 0.6])
+        fruit_cov = np.cov(fruit.T)
+        fruit_ell = ellipse_params(fruit_cov)
+        v = sugar_mean - fruit_mean
+        mv = rotate(v, sugar_ell[-1], ccv=False)
+        fv = rotate(v, fruit_ell[-1], ccv=False)
+        mellipse_right = float(sugar_mean[0]) > float(fruit_mean[0])
+        pre_mp = intersect(sugar_ell[:2], mv, right=(not mellipse_right))
+        pre_fp = intersect(fruit_ell[:2], fv, right=mellipse_right)
+        mp = sugar_mean + rotate(pre_mp, sugar_ell[-1])
+        fp = fruit_mean + rotate(pre_fp, fruit_ell[-1])
         line = mp - fp
         pre_sample = np.array([dh1, d13c]) - 0.6
         sample = pre_sample - fp
@@ -274,22 +261,21 @@ def xperiment_codename_tunneling2():
         denom = norm(line)
         proj = enum / denom
         print("{} ({}) maize content: {:>.2%}".format(smplnm, species, proj / norm(line)))
-        display((mmean[0], mmean[1], mcov),
-                (fmean[0], fmean[1], fcov),
-                mp, fp, species, smplnm, smpl=pre_sample,
-                dump=True)
+        display((sugar_mean[0], sugar_mean[1], sugar_cov),
+                (fruit_mean[0], fruit_mean[1], fruit_cov),
+                mp, fp, species, smplnm, sugar, smpl=pre_sample)
 
 
 if __name__ == '__main__':
-    print("Euklideszi távolság")
-    print("-------------------")
-    xperiment_euclidean_distance("beet")
-    print("\nMahalanobis távolság")
-    print("--------------------")
-    xperiment_mahalanobis_distance("beet")
-    print("\nGeometriai, átlagokból")
-    print("----------------------")
-    xperiment_codename_tunneling("beet")
-    # print("\nGeometriai, 95% interszekciótól")
-    # print("-------------------------------")
-    # xperiment_codename_tunneling2()
+    # print("Euklideszi távolság")
+    # print("-------------------")
+    # xperiment_euclidean_distance("beet")
+    # print("\nMahalanobis távolság")
+    # print("--------------------")
+    # xperiment_mahalanobis_distance("beet")
+    # print("\nGeometriai, átlagokból")
+    # print("----------------------")
+    # xperiment_codename_tunneling("beet")
+    print("\nGeometriai, 95% interszekciótól")
+    print("-------------------------------")
+    xperiment_codename_tunneling2("beet")
