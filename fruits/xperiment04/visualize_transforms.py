@@ -27,4 +27,4 @@ def plot_transform(trname, feature):
 
 
 if __name__ == "__main__":
-    plot_transform("poly pca", "FAMILIA")
+    plot_transform("lda", "FAMILIA")
