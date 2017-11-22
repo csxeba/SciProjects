@@ -8,7 +8,7 @@ from . import projectroot
 
 class FruitData:
 
-    _isotope = ["DH1", "DH2", "D13C"]
+    _isotope = ["DH1", "D13C"]
     _volatile = ["METOH", "ACALD", "ETAC", "ACETAL", "1PROP", "2M1P", "2M1B", "3M1B"]
     _simplevol = ["METOH", "ACALD", "ETAC", "ACETAL", "1PROP", "2M1P", "AMYL"]
     _etoh = ["ALK"]

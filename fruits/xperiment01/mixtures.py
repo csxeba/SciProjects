@@ -179,9 +179,10 @@ def xperiment_euclidean_distance(sugar="maize"):
 
     maize_center = sugar_parameters(sugar)[0]
     samples = get_sample_xs()
+    fruit = FruitData()
     for smplnm in sorted(samples):
         species, dh1, d13c = samples[smplnm]
-        fruit_center = pull_fruits_data(species).mean(axis=0) + 0.6
+        fruit_center = fruit(species).mean(axis=0) + 0.6
 
         s = np.array([dh1, d13c]) - 0.6
 
