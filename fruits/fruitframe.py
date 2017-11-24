@@ -102,3 +102,7 @@ class EtOH(Container):
         else:
             raw = cls.fruitdata.loc[cls.fruitdata["GYUM"] == what, ("DH1", "D13C")].as_matrix()
         return cls(ID="Fruit" if what is None else what, species=what, mean=raw.mean(axis=0), cov=np.cov(raw.T))
+
+    @classmethod
+    def sample(cls, dh1, d13c, fruit, ID):
+        return cls(mean=np.array([dh1, d13c]), ID=ID, species=fruit)
