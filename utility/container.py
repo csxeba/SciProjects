@@ -5,6 +5,8 @@ class Container:
         self.__dict__.update(kw)
 
     def __getitem__(self, item):
+        if item not in self.__dict__:
+            return None
         return self.__dict__[item]
 
     def __setitem__(self, key, value):

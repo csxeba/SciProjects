@@ -96,6 +96,9 @@ class EtOH(Container):
         return cls(ID=what, species=what, mean=means, cov=covar)
 
     @classmethod
-    def fruit(cls, what):
-        raw = cls.fruitdata.loc[cls.fruitdata["GYUM"] == what, ("DH1", "D13C")].as_matrix()
-        return cls(ID=what, species=what, mean=raw.mean(axis=0), cov=np.cov(raw.T))
+    def fruit(cls, what=None):
+        if what is None:
+            raw = cls.fruitdata[["DH1", "D13C"]].as_matrix()
+        else:
+            raw = cls.fruitdata.loc[cls.fruitdata["GYUM"] == what, ("DH1", "D13C")].as_matrix()
+        return cls(ID="Fruit" if what is None else what, species=what, mean=raw.mean(axis=0), cov=np.cov(raw.T))
