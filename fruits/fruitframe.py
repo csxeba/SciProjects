@@ -85,12 +85,14 @@ class EtOH(Container):
             means = np.array([110.8, -10.3])
             covar = np.array([
                 [2.81, -0.17],
-                [-0.17, 0.67]])
+                [-0.17, 0.67]
+            ])
         elif what == "Beet":
             means = np.array([92.38, -27.47])
             covar = np.array([
                 [1.13, 0.32],
-                [0.32, 0.4]])
+                [0.32, 0.4]
+            ])
         else:
             raise ValueError("No such sugar in database: " + what)
         return cls(ID=what, species=what, mean=means, cov=covar)
