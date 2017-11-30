@@ -15,7 +15,7 @@ class WineData:
     _alcohol = ["ETOH", "GLYC", "DISTETOH"]
     _physical = ["DENSITY", "DRYMATTER"]
     _acid = ["TOTALACID", "TRTA", "MLCA", "CTRA", "SCNA", "ACTA", "LCTA"]
-    _isotope = ["DH1", "DH2", "D13C", "D18OWA", "D18OWI"]
+    _isotope = ["DH1", "DH2", "D13C", "D18O"]
     _metal = ["K", "MG", "CU", "CA", "FE", "NA"]
     _indeps = _sugar + _alcohol + _physical + _acid + _isotope + _metal
     _columns = _label + _gps + _indeps
