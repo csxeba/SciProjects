@@ -21,7 +21,7 @@ class FruitProblem:
         return cls(EtOH.fruit(fruit_name), EtOH.sugar(sugar_name))
 
     def mixture_ratio(self, *samples, approach="euclidean", verbose=1):
-        calc_fn = {"euc": _euclidean_approach, "mah": _mahal_approach, "opt": _optimization_approach
+        calc_fn = {"euc": _euclidean_ratio, "mah": _mahal_approach, "opt": _optimization_approach
                    }[approach[:3].lower()]
         alphas = np.array([calc_fn(sample, self._fruit, self._sugar) for sample in samples])
         if verbose:
@@ -31,29 +31,31 @@ class FruitProblem:
         return alphas
 
 
-def _mahal_approach(sample, fruit, sugar):
-
-    def dm(x, mu, cov):
-        d = x - mu
-        return np.sqrt(d.T @ np.linalg.inv(cov) @ d)
-
-    dbase = dm(sample["mean"], fruit["mean"], fruit["cov"])
-    dtop = dm(sample["mean"], sugar["mean"], sugar["cov"])
-    return dtop / (dtop + dbase)
-
-
-def _euclidean_approach(sample, fruit, sugar):
+def _euclidean_ratio(sample, fruit, sugar):
     dbase = np.linalg.norm(sample["mean"] - fruit["mean"])
     dtop = np.linalg.norm(sample["mean"] - sugar["mean"])
     return dtop / (dtop + dbase)
 
 
-def _optimization_approach(sample, fruit, sugar):
-    return (sugar["mean"] @ (fruit["mean"] - sample["mean"])) / (np.linalg.norm(fruit["mean"])**2.)
+def _mahalanobis_ratio(sample, fruit, sugar):
+
+    def md(x, mu, sigma):
+        return
 
 
-def _optimization_approach2(sample, fruit, sugar):
-    return (np.linalg.norm(sample["mean"]) - np.linalg.norm(fruit["mean"])) / np.linalg.norm(sugar["mean"])
+def _optimization_euclidean(sample, fruit, sugar):
+    x, m0, m1 = sample["mean"], fruit["mean"], sugar["mean"]
+    return (x @ m1 - m0 @ m1) / (m1 @ m1)
+
+
+def _optimization_mahalanobis(sample, fruit, sugar):
+
+    def trp(y, z=None):
+        return np.sum(M * np.outer(y, y if z is None else z))
+
+    M = np.linalg.inv(sugar["cov"]) @ fruit["cov"]
+    x, m0, m1 = sample["mean"], fruit["mean"], sugar["mean"]
+    return np.sqrt((trp(x) - 2.*trp(x, m0) + trp(m0)) / (trp(m1)))
 
 
 if __name__ == '__main__':
