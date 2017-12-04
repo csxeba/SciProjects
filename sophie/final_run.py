@@ -4,10 +4,10 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 from sklearn.feature_selection import f_classif
 
-from csxdata.utilities.parser import parse_csv
+from csxdata.parser import parser
 from csxdata.utilities.vectorop import split_by_categories
 from csxdata.utilities.highlevel import transform
-from csxdata.visual import Plotter2D
+from csxdata.visual import Scatter2D
 
 from SciProjects.sophie import axtitles
 
@@ -68,22 +68,22 @@ def add_ellipse(ax, means, cov, sigma, color, name, **kw):
 
 
 def load_eu_irms():
-    X, Y, head = parse_csv(currentroot + "EUborIRMS.csv", decimal=True)
+    X, Y, head = parser.csv(currentroot + "EUborIRMS.csv", decimal=True)
     return X[:, 0], X[:, 1].ravel(), Y.ravel()
 
 
 def load_eu_nmr():
-    X, Y, head = parse_csv(currentroot + "EUborNMR.csv", decimal=True)
+    X, Y, head = parser.csv(currentroot + "EUborNMR.csv", decimal=True)
     return X[:, 0], X[:, 1].ravel(), Y.ravel()
 
 
 def load_world_nmr():
-    X, Y, head = parse_csv(currentroot + "WW_NMR.csv", decimal=True)
+    X, Y, head = parser.csv(currentroot + "WW_NMR.csv", decimal=True)
     return X[:, 0], X[:, 1].ravel(), Y.ravel()
 
 
 def load_eu_full():
-    X, Y, head = parse_csv(currentroot + "EUborMinden.csv", decimal=True)
+    X, Y, head = parser.csv(currentroot + "EUborMinden.csv", decimal=True)
     return X, Y.ravel()
 
 
@@ -96,23 +96,20 @@ def load_italian_data():
 
 
 def xperiment_param_vs_Ycoord(pnm, param, Y_C, labels, ttl):
-    fig = plt.gcf()
     r, p = stats.pearsonr(param, Y_C)
-    plotter = Plotter2D(fig, np.stack((Y_C, param), axis=1), labels,
+    plotter = Scatter2D(np.stack((Y_C, param), axis=1), labels,
                         axlabels=("Egyenlítőtől való távolság (°)", axtitles[pnm]))
-    plotter.split_scatter(sigma=0, dumppath=currentroot + "PIX/")
+    plotter.split_scatter(sigma=0, show=False)
     plotter.add_trendline(color="red", linewidth=2)
-    plotter.add_legend(plt, "lower left", ncol=3)
     plt.title(ttl + "\nPearson korreláció: r = {:.3f}, p = {:.3f}, {}szignifikáns"
               .format(r, p, ("nem" if p > 0.05 else "")))
     plt.show()
 
 
 def xperiment_ellipses(param, labels, ttl):
-    fig = plt.gcf()
     tparam = transform(param, 1, get_model=False, method="lda", y=labels)
     (F,), (p,) = f_classif(tparam, labels)
-    plotter = Plotter2D(fig, param, labels, axlabels=[axtitles["DHI"], axtitles["D13C"]])
+    plotter = Scatter2D(param, labels, axlabels=[axtitles["DHI"], axtitles["D13C"]])
     # plotter.split_scatter(sigma=0, alpha=.3)
     # plotter.reset_color()
     plotter.split_scatter(center=True)
@@ -126,9 +123,8 @@ def xperiment_ellipses(param, labels, ttl):
 
 
 def xperiment_world_correlation(pnm, param, Y_C, labels, ttl):
-    fig = plt.gcf()
     r, p = stats.pearsonr(param, Y_C)
-    plotter = Plotter2D(fig, np.stack((param, Y_C), axis=1), labels,
+    plotter = Scatter2D(np.stack((param, Y_C), axis=1), labels,
                         axlabels=["Egyenlítőtől való távolság (°)", axtitles[pnm]])
     plotter.split_scatter(center=True, sigma=0)
     plotter.add_trendline()
@@ -188,10 +184,10 @@ def xperiment_czhech_samples():
         plt.tight_layout()
         plt.show()
 
-    X, Y, head = parse_csv(currentroot + "cseh.csv", decimal=True)
+    X, Y, head = parser.csv(currentroot + "cseh.csv", decimal=True)
     cznmr = dict(zip(Y.ravel(), X[:, :2]))
     czirms = dict(zip(Y.ravel(), X[:, 2:]))
-    X, Y, head = parse_csv(currentroot + "SZIdata.csv", 4)
+    X, Y, head = parser.csv(currentroot + "SZIdata.csv", 4)
     Y = Y[:, 3]
     hudict = split_by_categories(Y.ravel(), X)
     hunmr = {name: (d[:, 0].min(), d[:, 0].max()) for name, d in hudict.items()}
@@ -214,8 +210,8 @@ def xperiment_orange():
 
 
 def xperiment_sophiexp():
-    X, Y, head = parse_csv(currentroot + "SophieXP.csv")
-    plotter = Plotter2D(plt.gcf(), X, Y.ravel(),
+    X, Y, head = parser.csv(currentroot + "SophieXP.csv")
+    plotter = Scatter2D(X, Y.ravel(),
                         axlabels=[axtitles["DHI"], axtitles["D13C"]])
     add_reference_ellipses(plotter.ax, 2, ["alma"])
     # add_reference_ellipses(plotter.ax, 3, ["alma"])
@@ -229,9 +225,9 @@ def main():
     # param, Y_C, labels = load_eu_nmr()
     # xperiment_param_vs_Ycoord("DHI", param, Y_C, labels, ttl)
     #
-    # ttl = r"$\delta^{13}C$ és az egyenlítőtől való távolság közötti összefüggés"
-    # param, Y_C, labels = load_eu_irms()
-    # xperiment_param_vs_Ycoord("D13C", param, Y_C, labels, ttl)
+    ttl = r"$\delta^{13}C$ és az egyenlítőtől való távolság közötti összefüggés"
+    param, Y_C, labels = load_eu_irms()
+    xperiment_param_vs_Ycoord("D13C", param, Y_C, labels, ttl)
     #
     # ttl = "Különböző országok $2\sigma$ konfidencia-ellipszisei " + \
     #       "a ${(D/H)_I; \delta^{13}C}$ paramétertérben"
@@ -249,7 +245,7 @@ def main():
     # ttl = r"$\delta^{13}C$ és az egyenlítőtől való távolság közötti összefüggés az olasz pontoknál"
     # xperiment_italian("D13C", D13C, Y_C, ttl)
 
-    xperiment_czhech_samples()
+    # xperiment_czhech_samples()
 
     # xperiment_orange()
 

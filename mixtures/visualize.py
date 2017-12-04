@@ -17,15 +17,14 @@ class FruitDisplayer:
 
     @classmethod
     def from_fuitproblem(cls, fruitproblem_obj, sigma_level=2.):
-        obj = cls(fruit=fruitproblem_obj.fruit, sugar=fruitproblem_obj.sugar, sigma_level=sigma_level)
-        obj.draw_as_point(fruitproblem_obj.sample)
-        return obj
+        return cls(fruit=fruitproblem_obj.fruit, sugar=fruitproblem_obj.sugar, sigma_level=sigma_level)
 
     def _draw_reference_ellipses(self):
         self.ellipse["fuit"] = self.draw_as_ellipse(self.fruit)
         self.ellipse["sugar"] = self.draw_as_ellipse(self.sugar)
         self.draw_as_point(self.fruit)
         self.draw_as_point(self.sugar)
+        self.link_centroids(self.fruit, self.sugar)
 
     def _calculate_ellipse_params_from_wrapper(self, wrapper):
         vals, vecs = np.linalg.eig(wrapper["cov"])
@@ -65,7 +64,7 @@ class FruitDisplayer:
         self.ax.plot(*wrapper["mean"], "ro")
         self.ax.annotate(wrapper.ID, xy=wrapper.mean)
 
-    def link_centroids(self, wrapper, other,):
+    def link_centroids(self, wrapper, other):
         mu1, mu2 = wrapper["mean"], other["mean"]
         self.ax.plot([mu1[0], mu2[0]], [mu1[1], mu2[1]], "r--")
 

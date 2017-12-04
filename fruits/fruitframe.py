@@ -81,13 +81,14 @@ class EtOH(Container):
 
     @classmethod
     def sugar(cls, what):
-        if what == "Maize":
+        what = what.lower()
+        if what in ("maize", "kukorica", "c14"):
             means = np.array([110.8, -10.3])
             covar = np.array([
                 [2.81, -0.17],
                 [-0.17, 0.67]
             ])
-        elif what == "Beet":
+        elif what in ("beet", "répa", "c13"):
             means = np.array([92.38, -27.47])
             covar = np.array([
                 [1.13, 0.32],
@@ -102,6 +103,7 @@ class EtOH(Container):
         if what is None:
             raw = cls.fruitdata[["DH1", "D13C"]].as_matrix()
         else:
+            what = what.lower()
             raw = cls.fruitdata.loc[cls.fruitdata["GYUM"] == what, ("DH1", "D13C")].as_matrix()
         return cls(ID="Fruit" if what is None else what, species=what, mean=raw.mean(axis=0), cov=np.cov(raw.T))
 

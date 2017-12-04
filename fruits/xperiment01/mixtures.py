@@ -233,7 +233,7 @@ def xperiment_codename_tunneling(sugar="maize"):
         enum = sample @ line
         denom = norm(line)
         proj = enum / denom
-        print(f"{smplnm} ({species}) {sugar} content: {proj / norm(line):>.2%}")
+        print(f"{smplnm} ({species}) {sugar} content: {proj:>.2%}")
 
 
 def xperiment_codename_tunneling2(sugar="maize"):

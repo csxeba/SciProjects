@@ -30,9 +30,9 @@ def plotem(byCCode, pnm, absolute):
     annot = sorted([n for n in byCCode])
     X, std, Y = np.array([byCCode[n] for n in annot]).T
     ax = plt.gca()
-    # ax.errorbar(Y, X, yerr=std*2, fmt="bX",
-    #             ecolor="red", elinewidth=1,
-    #             capsize=4)
+    ax.errorbar(Y, X, yerr=std*2, fmt="bX",
+                ecolor="red", elinewidth=1,
+                capsize=4)
     south = np.zeros_like(Y)
     south[Y < 0.] = 1.
     south = south.astype(bool)
@@ -45,9 +45,9 @@ def plotem(byCCode, pnm, absolute):
     print("FIT1:", fit1)
     print("FIT2:", fit2)
     lin = np.poly1d(fit1)
-    _time_scatter(Y, lin(Y), "r-")
+    plt.scatter(Y, lin(Y), "r-")
     lin = np.poly1d(fit2)
-    _time_scatter(Y, lin(Y), "r-")
+    plt.scatter(Y, lin(Y), "r-")
     r, p = correlate(pnm)
     for label, y, x in zip(annot, Y, X):
         ax.annotate(label, xy=(y, x), xycoords="data",
@@ -64,7 +64,7 @@ def plotem(byCCode, pnm, absolute):
     plt.show()
 
 
-X_C, Y_C, DHI, D13C, CCode = pull_data("04GEO_full.csv", sep=";")
+Y_C, DHI, D13C, CCode = pull_data("04GEO_full.csv", sep=";")
 
 dh1cc = split_by_CCode(DHI)
 d13cc = split_by_CCode(D13C)

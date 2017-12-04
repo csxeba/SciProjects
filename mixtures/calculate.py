@@ -7,48 +7,66 @@ import numpy as np
 from SciProjects.fruits.fruitframe import EtOH
 
 
-_approaches = ("euclidean", "mahalanobis", "optimization")
-
-
 class FruitProblem:
 
     def __init__(self, fruit_reference: EtOH, sugar_reference: EtOH):
-        self._fruit = fruit_reference
-        self._sugar = sugar_reference
+        self.fruit = fruit_reference
+        self.sugar = sugar_reference
 
     @classmethod
     def from_names(cls, fruit_name, sugar_name):
         return cls(EtOH.fruit(fruit_name), EtOH.sugar(sugar_name))
 
-    def mixture_ratio(self, *samples, approach="euclidean", verbose=1):
-        calc_fn = {"euc": _euclidean_ratio, "mah": _mahal_approach, "opt": _optimization_approach
-                   }[approach[:3].lower()]
-        alphas = np.array([calc_fn(sample, self._fruit, self._sugar) for sample in samples])
+    def _calculate(self, calcfn, calcapproach, verbose, *samples):
+        alphas = np.array([calcfn(sample, self.fruit, self.sugar) for sample in samples])
         if verbose:
-            print(f"Most probable mixture ratios calculated by approach: {approach}")
+            print(f"Most probable mixture by {calcapproach}:")
             for sample, ratio in zip(samples, alphas):
                 print(f"Sample: {sample.ID} sugar content: {ratio:.2%}")
         return alphas
 
+    def ratio_based(self, *samples, metric="euclidean", verbose=1):
+        calcfn = {"euc": _euclidean_ratio, "mah": _mahalanobis_ratio}[metric[:3].lower()]
+        return self._calculate(calcfn, f"{metric} distance ratio", verbose, *samples)
 
-def _euclidean_ratio(sample, fruit, sugar):
+    def optimization_based(self, *samples, metric="mahalanobis", verbose=1):
+        calcfn = {"euc": _optimization_euclidean, "mah": _optimization_mahalanobis}[metric[:3].lower()]
+        return self._calculate(calcfn, f"optimizing on {metric} distance", verbose, *samples)
+
+    def projection_based(self, *samples, metric=None, verbose=1):
+        return self._calculate(_project_on_line, "projection", verbose, *samples)
+
+
+def _euclidean_ratio(sample, fruit, sugar, verbose=0):
     dbase = np.linalg.norm(sample["mean"] - fruit["mean"])
     dtop = np.linalg.norm(sample["mean"] - sugar["mean"])
+    if verbose:
+        print(f"R_EUCL: sample from fruit: {dbase}")
+        print(f"R_EUCL: sample from sugar: {dtop}")
     return dtop / (dtop + dbase)
 
 
-def _mahalanobis_ratio(sample, fruit, sugar):
+def _mahalanobis_ratio(sample, fruit, sugar, verbose=0):
 
     def md(x, mu, sigma):
-        return
+        z = x - mu
+        return z @ np.linalg.inv(sigma) @ z
+
+    dtop = md(sample["mean"], sugar["mean"], sugar["cov"])
+    dbase = md(sample["mean"], fruit["mean"], sugar["cov"])
+    if verbose:
+        print(f"R_EUCL: sample from fruit: {dbase}")
+        print(f"R_EUCL: sample from sugar: {dtop}")
+    return dtop / (dtop + dbase)
 
 
-def _optimization_euclidean(sample, fruit, sugar):
-    x, m0, m1 = sample["mean"], fruit["mean"], sugar["mean"]
-    return (x @ m1 - m0 @ m1) / (m1 @ m1)
+def _optimization_euclidean(sample, fruit, sugar, verbose=0):
+    x = sample["mean"] - fruit["mean"]
+    mu = sugar["mean"] - fruit["mean"]
+    return (x @ mu) / (mu @ mu)
 
 
-def _optimization_mahalanobis(sample, fruit, sugar):
+def _optimization_mahalanobis(sample, fruit, sugar, verbose=0):
 
     def trp(y, z=None):
         return np.sum(M * np.outer(y, y if z is None else z))
@@ -58,5 +76,25 @@ def _optimization_mahalanobis(sample, fruit, sugar):
     return np.sqrt((trp(x) - 2.*trp(x, m0) + trp(m0)) / (trp(m1)))
 
 
+def _project_on_line(sample, fruit, sugar, verbose=0):
+    x = sample["mean"] - fruit["mean"]
+    mu = sugar["mean"] - fruit["mean"]
+    enum = x @ mu
+    denom = np.linalg.norm(mu)
+    if verbose:
+        print(f"project enum: {enum}, denom: {denom}")
+    return enum / denom
+
+
 if __name__ == '__main__':
-    print(_optimization_approach(EtOH.sample(95.5, -27.7, "Alma", "5376"), EtOH.fruit("Alma"), EtOH.sugar("Beet")))
+    from SciProjects.mixtures.visualize import FruitDisplayer
+    prob = FruitProblem.from_names(fruit_name="kajszi", sugar_name="répa")
+    sample = EtOH.sample(95.73, -25.89, "kajszi", "17090055")
+    prob.ratio_based(sample, metric="euclidean")
+    prob.ratio_based(sample, metric="mahalanobis")
+    prob.optimization_based(sample, metric="euclidean")
+    prob.optimization_based(sample, metric="mahalanobis")
+    prob.projection_based(sample)
+    fd = FruitDisplayer.from_fuitproblem(fruitproblem_obj=prob)
+    fd.draw_as_point(sample)
+    fd.show()
