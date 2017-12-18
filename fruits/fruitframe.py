@@ -13,7 +13,7 @@ class FruitData:
     _simplevol = ["METOH", "ACALD", "ETAC", "ACETAL", "1PROP", "2M1P", "AMYL"]
     _etoh = ["ALK"]
     _independent = _isotope + _etoh + _simplevol
-    _transformation = [""] * 3 + ["exp"] + ["log"] * 7
+    _transformation = [""] * 3 + ["log"] * 8
     _dependent = ["FAMILIA", "GYUM", "EV"]
     _header = _dependent + _independent
 

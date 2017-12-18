@@ -1,49 +1,61 @@
+import numpy as np
+
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA, QuadraticDiscriminantAnalysis as QDA
 from sklearn.naive_bayes import GaussianNB as GNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
 
 from csxdata.utilities.vectorop import separate_validation
-from csxdata.stats.inspection import category_frequencies
-from csxdata.visual.confusion import plot_confmatrix
 
 from SciProjects.fruits.fruitframe import FruitData
-from SciProjects.fruits import projectroot
 
 
-df = FruitData(transform=True)
-X = df.volatile.as_matrix()
-X -= X.mean(axis=0)
-X /= X.std(axis=0)
-y = df["GYUM"].as_matrix()
+class ClassifierMock:
 
-category_frequencies(y)
+    def __init__(self):
+        self.X, self.Y = None, None
+
+    def fit(self, X, Y):
+        self.X, self.Y = X, Y
+
+    def predict(self, X, Y=None):
+        del Y
+        return np.random.choice(self.Y, len(X))
 
 
-def resplit_data(split=0.1):
-    return separate_validation(split, X, y, balanced=True, nowarning=False)
+def load_dataset(feature, dset="volatile"):
+    df = FruitData(transform=True)
+    X = df.volatile.as_matrix() if dset == "volatile" else df.isotope.as_matrix()
+    X = (X - X.mean(axis=0)) / X.std(axis=0)
+    y = df[feature].as_matrix()
+    return X, y
 
 
 def get_model(name):
     return {
-        "lda": LDA(), "qda": QDA(), "gnb": GNB(), "knn": KNN(),
+        "mock": ClassifierMock(), "lda": LDA(), "qda": QDA(), "gnb": GNB(), "knn": KNN(),
         "forest": RandomForestClassifier(),
         "svm": SVC(kernel="linear", class_weight="balanced"),
-        "rbf svm": SVC(kernel="rbf", class_weight="balanced"),
-        "poly svm": SVC(kernel="poly", degree=3, class_weight="balanced"),
-        "mlp": MLPClassifier(learning_rate_init=0.1)
     }[name]
 
 
-def xperiment(modelname, repeat=100):
-    lX, lY, tX, tY = resplit_data()
-    model = get_model(modelname)
-    model.fit(lX, lY)
-    acc = plot_confmatrix(tX, tY, model, title=f"{modelname.upper()} confusion matrix")
+def xperiment(modelname, X, Y, repeat=100):
+    acc = []
+    for rep in range(repeat):
+        lX, lY, tX, tY = separate_validation(0.1, X, Y, balanced=True, nowarning=True)
+        model = get_model(modelname)
+        model.fit(lX, lY)
+        acc.append(np.mean(model.predict(tX) == tY))
+    return np.mean(acc)
+
+
+def main():
+    X, y = load_dataset(feature="EV", dset="isotope")
+    for mn in ("mock", "lda", "qda", "gnb", "knn", "forest", "svm"):
+        acc = xperiment(mn, X, y, repeat=100)
+        print(f"{mn.upper()} accuracy: {acc:.2%}")
 
 
 if __name__ == '__main__':
-    for mn in ("lda", "qda", "gnb", "knn", "forest", "svm", "rbf svm", "poly svm", "mlp"):
-        xperiment(mn, repeat=1)
+    main()
