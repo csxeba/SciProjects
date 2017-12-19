@@ -3,7 +3,7 @@ from SciProjects.vinyard.utility import WineData
 from csxdata.visual.scatter import Scatter2D
 from csxdata.utilities.vectorop import drop_lowNs
 
-FEATURE = "CULTIVAR"
+FEATURE = "WINEREGION"
 
 dw = WineData()[[FEATURE, "DH1", "D18O"]].dropna()
 Y, X = dw[FEATURE].as_matrix(), dw[["DH1", "D18O"]].as_matrix()

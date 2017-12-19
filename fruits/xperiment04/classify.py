@@ -1,9 +1,11 @@
 import numpy as np
 
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA, QuadraticDiscriminantAnalysis as QDA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn.naive_bayes import GaussianNB as GNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier as KNN
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 
 from csxdata.utilities.vectorop import separate_validation
@@ -24,9 +26,11 @@ class ClassifierMock:
         return np.random.choice(self.Y, len(X))
 
 
-def load_dataset(feature, dset="volatile"):
+def load_dataset(feature, dset=None):
     df = FruitData(transform=True)
-    X = df.volatile.as_matrix() if dset == "volatile" else df.isotope.as_matrix()
+    X = {"volatile": df.volatile.as_matrix(),
+         "isotope": df.isotope.as_matrix(),
+         None: df.X.as_matrix()}[dset]
     X = (X - X.mean(axis=0)) / X.std(axis=0)
     y = df[feature].as_matrix()
     return X, y
@@ -35,7 +39,7 @@ def load_dataset(feature, dset="volatile"):
 def get_model(name):
     return {
         "mock": ClassifierMock(), "lda": LDA(), "qda": QDA(), "gnb": GNB(), "knn": KNN(),
-        "forest": RandomForestClassifier(),
+        "forest": RandomForestClassifier(), "logistic": LogisticRegression(class_weight="balanced"),
         "svm": SVC(kernel="linear", class_weight="balanced"),
     }[name]
 
@@ -51,8 +55,8 @@ def xperiment(modelname, X, Y, repeat=100):
 
 
 def main():
-    X, y = load_dataset(feature="EV", dset="isotope")
-    for mn in ("mock", "lda", "qda", "gnb", "knn", "forest", "svm"):
+    X, y = load_dataset(feature="GYUM", dset=None)
+    for mn in ("mock", "lda", "qda", "gnb", "knn", "forest", "svm", "logistic"):
         acc = xperiment(mn, X, y, repeat=100)
         print(f"{mn.upper()} accuracy: {acc:.2%}")
 

@@ -2,6 +2,7 @@ from sklearn.decomposition import PCA, FastICA, KernelPCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.manifold import SpectralEmbedding
 
+from csxdata.stats import manova
 from csxdata.stats.inspection import category_frequencies
 from csxdata.visual.scatter import Scatter2D, Scatter3D
 from csxdata.utilities.vectorop import standardize
@@ -21,14 +22,16 @@ def get_transformator(ndim, transformation):
 
 
 def xperiment(transform, ndim):
-    X, Y = read_datasets(ycol="WINEREGION", dropthresh=0)
+    X, Y = read_datasets(ycol="YEAR", dropthresh=10)
+    category_frequencies(Y)
+    F, p = manova(X, Y)
     X = standardize(X)
     model = get_transformator(ndim, transform)
     lX = model.fit_transform(X, Y)
-    category_frequencies(Y)
 
-    plottitle = transform.upper()
-    axlabels = [f"Latent0{i}" for i in range(1, ndim+1)]
+    expvar = model.explained_variance_ratio_[:ndim]
+    plottitle = f"{transform.upper()} ({sum(expvar):.2%})\nMANOVA F = {F:.4f}, p = {p:.4f}"
+    axlabels = [f"Latent0{i+1} ({expvar[i]:.2%})" for i in range(ndim)]
 
     if ndim == 2:
         scat = Scatter2D(lX, Y, title=plottitle, axlabels=axlabels)

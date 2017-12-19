@@ -67,13 +67,9 @@ def _optimization_euclidean(sample, fruit, sugar, verbose=0):
 
 
 def _optimization_mahalanobis(sample, fruit, sugar, verbose=0):
-
-    def trp(y, z=None):
-        return np.sum(M * np.outer(y, y if z is None else z))
-
-    M = np.linalg.inv(sugar["cov"]) @ fruit["cov"]
+    M = np.linalg.inv(sugar["cov"])
     x, m0, m1 = sample["mean"], fruit["mean"], sugar["mean"]
-    return np.sqrt((trp(x) - 2.*trp(x, m0) + trp(m0)) / (trp(m1)))
+    return np.sqrt((x@M@x - 2*x@M@m0) + m0@M@m0) / (m1@M@m1)
 
 
 def _project_on_line(sample, fruit, sugar, verbose=0):
@@ -86,7 +82,7 @@ def _project_on_line(sample, fruit, sugar, verbose=0):
     return enum / denom
 
 
-if __name__ == '__main__':
+def main():
     from SciProjects.mixtures.visualize import FruitDisplayer
     prob = FruitProblem.from_names(fruit_name="kajszi", sugar_name="répa")
     sample = EtOH.sample(95.73, -25.89, "kajszi", "17090055")
@@ -98,3 +94,7 @@ if __name__ == '__main__':
     fd = FruitDisplayer.from_fuitproblem(fruitproblem_obj=prob)
     fd.draw_as_point(sample)
     fd.show()
+
+
+if __name__ == '__main__':
+    main()

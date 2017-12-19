@@ -38,6 +38,10 @@ class FruitData:
     def volatile(self):
         return self.valid[self._simplevol]
 
+    @property
+    def X(self):
+        return self.valid[self._isotope + self._simplevol]
+
     def _read_raw_data(self, transform):
         df = pd.read_excel(projectroot + "adat.xlsx", index_col="EURODAT")  # type: pd.DataFrame
         self.raw = df[self._dependent + self._isotope + self._etoh + self._volatile].dropna()

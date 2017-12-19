@@ -1,4 +1,4 @@
-from csxdata.visual.scatter import Scatter2D
+from csxdata.visual.scatter import Scatter2D, Scatter3D
 from csxdata.stats import manova
 
 from sklearn.decomposition import PCA, KernelPCA, FastICA
@@ -8,25 +8,32 @@ from sklearn.manifold import SpectralEmbedding
 from SciProjects.fruits.fruitframe import FruitData
 
 
-def transform(X, trname, y=None):
-    model = {"pca": PCA(whiten=True), "ica": FastICA(whiten=True),
-             "rbf pca": KernelPCA(kernel="rbf"), "lda": LDA(),
-             "poly pca": KernelPCA(kernel="poly", degree=2),
-             "se": SpectralEmbedding(n_components=3, n_jobs=4)
-             }[trname.lower()]
-    return model.fit_transform(X, y)[:, :2]
+def transform(X, trname, ndim, y=None):
+    return {"pca": PCA(whiten=True, n_components=ndim),
+            "ica": FastICA(whiten=True, n_components=ndim),
+            "lda": LDA(n_components=ndim),
+            "rbf pca": KernelPCA(kernel="rbf", n_components=ndim),
+            "poly pca": KernelPCA(kernel="poly", degree=2, n_components=ndim),
+            "se": SpectralEmbedding(n_components=ndim, n_jobs=4)
+    }[trname.lower()].fit_transform(X=X, y=y)
 
 
-def plot_transform(trname, feature):
+def plot_transform(trname, feature, ndim):
     df = FruitData(transform=True)
-    X, Y = df.isotope, df[feature]
-    lX = transform(X, trname, Y)
+    X, Y = df.X, df[feature]
+    lX = transform(X, trname, ndim, Y)
     F, p = manova(X.as_matrix(), Y.as_matrix())
-    scat = Scatter2D(lX, Y.as_matrix(), axlabels=[f"LatentFactor{i}" for i in range(1, 3)],
-                     title=f"Transformation: {feature.upper()}\nF = {F:.4f}; p = {p:.4f}")
+    if ndim == 2:
+        scat = Scatter2D(lX, Y.as_matrix(), axlabels=[f"LatentFactor{i}" for i in range(1, 3)],
+                         title=f"Transformation: {feature.upper()}\nF = {F:.4f}; p = {p:.4f}")
+    elif ndim == 3:
+        scat = Scatter3D(lX, Y.as_matrix(), axlabels=[f"LatentFactor{i}" for i in range(1, 4)],
+                         title=f"Transformation: {feature.upper()}\nF = {F:.4f}; p = {p:.4f}")
+    else:
+        raise ValueError(f"Invalid ndim: {ndim}")
     # scat.scatter()
     scat.split_scatter(show=True)
 
 
 if __name__ == "__main__":
-    plot_transform("lda", "EV")
+    plot_transform("poly pca", "FAMILIA", 2)
