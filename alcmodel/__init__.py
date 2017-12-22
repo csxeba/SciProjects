@@ -9,6 +9,8 @@ projectroot = os.path.expanduser("~/SciProjects/Project_alcmodel/")
 
 class Converter:
 
+    DENSETOH = 0.789
+
     def __init__(self, model=None, data=None, deg=2):
         self.deg = deg
         self.data = Converter.get_reference() if data is None else data
@@ -56,7 +58,8 @@ class Converter:
             vperc = vperc.as_matrix().ravel()
         if not isinstance(X, np.ndarray):
             X = X.as_matrix()
-        return (X * self.model(vperc)[:, None] * 10.) / vperc[:, None]
+        dens = self.model(vperc)[:, None]
+        return (X * dens) / ((vperc * self.DENSETOH)[:, None]) * 100
 
     def plot(self, model=None):
         model = self.model if model is None else model

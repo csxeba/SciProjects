@@ -14,13 +14,14 @@ class FruitData:
     _etoh = ["ALK"]
     _independent = _isotope + _etoh + _simplevol
     _transformation = [""] * 3 + ["log"] * 8
-    _dependent = ["FAMILIA", "GYUM", "EV"]
+    _dependent = ["FAMILIA", "GYUM", "EV", "MEGYE"]
     _header = _dependent + _independent
 
-    def __init__(self, transform=False):
+    def __init__(self, dependent=None, transform=False):
         self.raw = None
         self.valid = None
         self.density_model = Converter(deg=3)
+        self.dependent = self._dependent if dependent is None else [dependent]
 
         self._read_raw_data(transform)
         self._cast_to_absolute_ethanol()
@@ -42,9 +43,13 @@ class FruitData:
     def X(self):
         return self.valid[self._isotope + self._simplevol]
 
+    @property
+    def Y(self):
+        return self.valid[self.dependent]
+
     def _read_raw_data(self, transform):
         df = pd.read_excel(projectroot + "adat.xlsx", index_col="EURODAT")  # type: pd.DataFrame
-        self.raw = df[self._dependent + self._isotope + self._etoh + self._volatile].dropna()
+        self.raw = df[self.dependent + self._isotope + self._etoh + self._volatile].dropna()
         if transform:
             mask = np.zeros(len(self.raw), dtype=bool)
             for col in self.raw[self._volatile].as_matrix().T:
