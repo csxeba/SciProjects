@@ -14,7 +14,7 @@ def plotit(what):
     else:
         plotme = np.stack((Y_C, D13C), axis=1)
     plotmeX, plotmeY = dropna(plotme, country_codes)
-    plotmeX, plotmeY = drop_lowNs(plotmeX, plotmeY, treshold=5)
+    plotmeX, plotmeY = drop_lowNs(plotmeX, plotmeY, threshold=5)
     category_frequencies(plotmeY)
     plot(plotmeX, plotmeY, axlabels=["Y", what])
 
