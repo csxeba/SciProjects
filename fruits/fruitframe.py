@@ -8,7 +8,7 @@ from . import projectroot
 
 class FruitData:
 
-    _isotope = ["DH1", "D13C"]
+    _isotope = ["DH1", "DH2", "D13C"]
     _volatile = ["METOH", "ACALD", "ETAC", "ACETAL", "1PROP", "2M1P", "2M1B", "3M1B"]
     _simplevol = ["METOH", "ACALD", "ETAC", "ACETAL", "1PROP", "2M1P", "AMYL"]
     _etoh = ["ALK"]
@@ -18,8 +18,8 @@ class FruitData:
     _header = _dependent + _independent
 
     def __init__(self, dependent=None, transform=False):
-        self.raw = None
-        self.valid = None
+        self.raw = None  # type: pd.DataFrame
+        self.valid = None  # type: pd.DataFrame
         self.density_model = Converter(deg=3)
         self.dependent = self._dependent if dependent is None else [dependent]
 
@@ -49,7 +49,7 @@ class FruitData:
 
     def _read_raw_data(self, transform):
         df = pd.read_excel(projectroot + "adat.xlsx", index_col="EURODAT")  # type: pd.DataFrame
-        self.raw = df[self.dependent + self._isotope + self._etoh + self._volatile].dropna()
+        self.raw = df[self.dependent + self._isotope + self._etoh + self._volatile]
         if transform:
             mask = np.zeros(len(self.raw), dtype=bool)
             for col in self.raw[self._volatile].as_matrix().T:
@@ -57,10 +57,11 @@ class FruitData:
             self.raw = self.raw[~mask]
 
     def _cast_to_absolute_ethanol(self):
-        labels = self.raw[self._dependent]
-        isotope = self.raw[self._isotope]  # type: pd.DataFrame
-        ethanol = self.raw[self._etoh]
-        volatile = self.raw[self._volatile]  # type: pd.DataFrame
+        raw = self.raw.dropna(subset=self._isotope + self._etoh + self._volatile)
+        labels = raw[self._dependent]
+        isotope = raw[self._isotope]  # type: pd.DataFrame
+        ethanol = raw[self._etoh]
+        volatile = raw[self._volatile]  # type: pd.DataFrame
         volatile = volatile.assign(AMYL=(volatile["2M1B"] + volatile["3M1B"]).values)
         del volatile["2M1B"], volatile["3M1B"]
         cast = self.density_model.to_absalc(ethanol, volatile)

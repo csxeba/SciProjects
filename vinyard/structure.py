@@ -8,8 +8,8 @@ DEFAULTPATH = projectroot + "BorAdatbázis.xlsx"
 
 class WineData:
 
-    _label = ["ID", "EURODAT", "SAMPLER", "GRAPEQUANT", "CULTIVAR", "COLOUR",
-              "WINEREGION", "WINECOUNTRY", "YEAR", "GEOORIGIN"]
+    _label = ["ID", "SAMPLER", "GRAPEQUANT", "CULTIVAR", "COLOUR",
+              "WINEREGION", "WINECOUNTRY", "YEAR", "GEOORIGIN", "COUNTY"]
     _gps = ["GPSX", "GPSY", "GPSZ"]
     _sugar = ["BRIX", "GLU", "FRU", "SAC"]
     _alcohol = ["ETOH", "GLYC", "DISTETOH"]
@@ -27,7 +27,7 @@ class WineData:
         self.iloc = self.raw.iloc
 
     def _read_raw_data(self):
-        self.raw = pd.read_excel(DEFAULTPATH, sheet_name="DATA")[self._columns]
+        self.raw = pd.read_excel(DEFAULTPATH, sheet_name="DATA", index_col="EURODAT")[self._columns]
 
     def __getitem__(self, item):
         return self.raw[item]
