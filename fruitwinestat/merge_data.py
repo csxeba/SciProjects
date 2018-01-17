@@ -10,7 +10,7 @@ from SciProjects.fruits.fruitframe import FruitData
 PARAM = ["DH1", "DH2", "D13C"]
 
 
-def pull_merged_data(feature=None, drop_outliers=True, force_reread=False) -> pd.DataFrame:
+def pull_merged_data(feature=None, drop_outliers=True, force_reread=False, report=False) -> pd.DataFrame:
     if force_reread:
         wd = WineData()
         wdf = wd.raw[["COUNTY", "YEAR"] + PARAM]  # type: pd.DataFrame
@@ -22,11 +22,12 @@ def pull_merged_data(feature=None, drop_outliers=True, force_reread=False) -> pd
         df.to_excel(projectroot + "Merged.xlsx")
     else:
         df = pd.read_excel(projectroot + "Merged.xlsx")
-    print(df.columns)
-    print()
-    print(df.describe())
-    print()
-    print(df.dtypes)
+    if report:
+        print(df.columns)
+        print()
+        print(df.describe())
+        print()
+        print(df.dtypes)
     if drop_outliers:
         # mask = np.logical_or(, df["DH1"] > 90)
         df = df[df["DH2"] < 135]

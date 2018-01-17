@@ -27,7 +27,7 @@ def xperiment_classification(df, feature):
 
 
 def xperiment_supervised(df):
-    learning_suite = supervised.SupervisedSuite()
+    learning_suite = supervised.SupervisedSuite(exclude_models="mlp")
     learning_suite.run_experiments(df, labels=["MEGYE", "EV"], features=PARAM,
                                    outxlsx=f"{projectroot}{XPID}_supervised.xlsx")
 
