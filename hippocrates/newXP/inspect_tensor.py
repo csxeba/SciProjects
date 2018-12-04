@@ -9,7 +9,7 @@ def pull_and_preprocess_data(path):
 
 
 def animate():
-    data = pull_and_preprocess_data(dataroot + "/Tumor_T2pos.npa")
+    data = pull_and_preprocess_data(dataroot + "Tumor_T2pos.npa")
     plt.ion()
     obj = plt.imshow(data[0, 0, :, :], vmin=0, vmax=255, cmap="hot")
     for tensor in data:

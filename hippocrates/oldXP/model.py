@@ -89,5 +89,6 @@ def fit():
     print("Done fitting data!")
     return network
 
+
 if __name__ == '__main__':
     fit()
