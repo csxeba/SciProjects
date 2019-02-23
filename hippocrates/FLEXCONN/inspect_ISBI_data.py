@@ -11,6 +11,6 @@ data = img.get_fdata()
 data = data / data.max()
 print("Data shape:", data.shape)
 print("Iterating over axis 1")
-for array in data.transpose(1, 0, 2):
+for array in data.transpose(2, 0, 1):
     cv2.imshow("Array", array)
     cv2.waitKey(100)

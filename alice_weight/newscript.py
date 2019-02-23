@@ -2,26 +2,28 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from SciProjects.alice_weight import projectroot
+from alice_weight import projectroot
 
-df = pd.read_excel(projectroot + "/alice_weight.xlsx")
-print(df.dtypes)
+PROJECT_ROOT = "/data/Megosztott/Dokumentumok/SciProjects/Project_AliceWeight/"
 
-df["tdelta"] = (df.date - df.date[0]).as_matrix().astype(int)
-# df["grams"] -= df["grams"].min()
+ADATA = "alice_weight.xlsx"
+BDATA = "benedict.xlsx"
 
-X = df.tdelta.as_matrix()
-Y = (df.grams - df.grams.min()).as_matrix()
-Y /= Y.max()
-# e^Y = Ax + B
-# Y = log(Ax) + log(B)
+adf = pd.read_excel(PROJECT_ROOT + ADATA)
+bdf = pd.read_excel(PROJECT_ROOT + BDATA)
 
-# X = np.log(X / X.max())
-# Y = np.exp(Y / Y.max())
-# Y = Y / Y.max()
+adf["tdelta"] = (adf.date - adf.date[0]).values.astype(int)
+bdf["tdelta"] = (bdf.date - bdf.date[0]).values.astype(int)
 
+aX = adf.tdelta.values
+aY = adf.grams.values
 
-plt.plot(X, Y)
-plt.scatter(X, Y)
+bX = bdf.tdelta.values
+bY = bdf.grams.values
+
+plt.plot(aX, aY, color="magenta", label="Alíz")
+plt.scatter(aX, aY, c="magenta")
+plt.plot(bX, bY, color="blue", label="Benedek")
+plt.scatter(bX, bY, c="blue")
 plt.grid(True)
 plt.show()
